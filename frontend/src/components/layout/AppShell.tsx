@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate, NavLink } from 'react-router-dom'
 import {
   Box, AppBar, Toolbar, Typography, List, ListSubheader,
   ListItemButton, ListItemIcon, ListItemText, Avatar, Chip,
-  Divider, IconButton, Tooltip, useTheme,
+  Divider, IconButton, Tooltip, useTheme, alpha,
 } from '@mui/material'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import TableChartIcon from '@mui/icons-material/TableChart'
@@ -11,7 +11,10 @@ import GavelIcon from '@mui/icons-material/Gavel'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import PeopleIcon from '@mui/icons-material/People'
 import LogoutIcon from '@mui/icons-material/Logout'
+import LightModeIcon from '@mui/icons-material/LightMode'
+import DarkModeIcon from '@mui/icons-material/DarkMode'
 import { useAuthContext } from '../../features/auth/AuthContext'
+import { useColorMode } from '../../theme/ThemeContext'
 import { signOut } from '../../services/authService'
 import { strings } from '../../i18n/strings.pt-BR'
 
@@ -83,6 +86,8 @@ function getInitials(name: string) {
 
 export function AppShell() {
   const theme = useTheme()
+  const { mode, toggleColorMode } = useColorMode()
+  const isDark = mode === 'dark'
   const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAuthContext()
@@ -107,17 +112,17 @@ export function AppShell() {
       }}
     >
       {/* Sidebar header */}
-      <Box sx={{ px: 2.5, py: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-        <Typography variant="subtitle1" fontWeight={700} color="primary.main" lineHeight={1.2}>
+      <Box sx={{ px: 2.5, py: 2.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
+        <Typography variant="subtitle1" fontWeight={800} color="primary.main" lineHeight={1.1} sx={{ letterSpacing: '-0.01em' }}>
           {strings.app.name}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
           {strings.app.subtitle}
         </Typography>
       </Box>
 
       {/* Nav list */}
-      <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', py: 1.5 }}>
         {navGroups.map((group, gi) => {
           if (group.adminOnly && user?.role !== 'Admin') return null
           return (
@@ -129,13 +134,14 @@ export function AppShell() {
                 group.heading ? (
                   <ListSubheader
                     sx={{
-                      fontSize: '0.65rem',
+                      fontSize: '0.6rem',
                       fontWeight: 700,
-                      letterSpacing: '0.08em',
+                      letterSpacing: '0.10em',
                       textTransform: 'uppercase',
                       color: 'text.disabled',
-                      lineHeight: '2rem',
+                      lineHeight: '2.2rem',
                       px: 2.5,
+                      mt: 0.5,
                       bgcolor: 'transparent',
                     }}
                   >
@@ -154,17 +160,29 @@ export function AppShell() {
                     to={item.path}
                     sx={{
                       mx: 1,
-                      borderRadius: 2,
+                      borderRadius: '10px',
                       mb: 0.25,
                       px: 1.5,
-                      bgcolor: active ? 'primary.light' : 'transparent',
-                      '&:hover': { bgcolor: active ? 'primary.light' : 'action.hover' },
+                      py: 0.85,
+                      bgcolor: active
+                        ? (isDark ? alpha(theme.palette.primary.main, 0.18) : alpha(theme.palette.primary.main, 0.10))
+                        : 'transparent',
+                      boxShadow: active
+                        ? (isDark ? `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.35)}` : 'none')
+                        : 'none',
+                      '&:hover': {
+                        bgcolor: active
+                          ? (isDark ? alpha(theme.palette.primary.main, 0.22) : alpha(theme.palette.primary.main, 0.13))
+                          : (isDark ? alpha('#ffffff', 0.06) : alpha('#000000', 0.04)),
+                      },
+                      transition: 'background-color 0.15s, box-shadow 0.15s',
                     }}
                   >
                     <ListItemIcon
                       sx={{
-                        minWidth: 32,
+                        minWidth: 34,
                         color: active ? 'primary.main' : 'text.secondary',
+                        transition: 'color 0.15s',
                       }}
                     >
                       {item.icon}
@@ -173,16 +191,17 @@ export function AppShell() {
                       primary={item.label}
                       primaryTypographyProps={{
                         variant: 'body2',
-                        fontWeight: active ? 600 : 400,
+                        fontWeight: active ? 700 : 400,
                         color: active ? 'primary.main' : 'text.primary',
                         noWrap: true,
+                        sx: { fontSize: '0.8125rem' },
                       }}
                     />
                     {item.comingSoon && (
                       <Chip
                         label="Em breve"
                         size="small"
-                        sx={{ fontSize: '0.6rem', height: 18, ml: 0.5 }}
+                        sx={{ fontSize: '0.58rem', height: 18, ml: 0.5, opacity: 0.7 }}
                       />
                     )}
                   </ListItemButton>
@@ -193,29 +212,59 @@ export function AppShell() {
         })}
       </Box>
 
-      {/* User card at bottom */}
+      {/* Dark mode toggle + user card */}
       <Divider />
-      <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Box sx={{ px: 1.5, pt: 1, pb: 0.5, display: 'flex', justifyContent: 'flex-end' }}>
+        <Tooltip title={isDark ? 'Modo claro' : 'Modo escuro'}>
+          <IconButton
+            size="small"
+            onClick={toggleColorMode}
+            sx={{
+              color: 'text.secondary',
+              borderRadius: '8px',
+              p: 0.75,
+              border: `1px solid ${theme.palette.divider}`,
+              transition: 'all 0.2s',
+              '&:hover': {
+                color: 'primary.main',
+                borderColor: 'primary.main',
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+              },
+            }}
+          >
+            {isDark ? <LightModeIcon sx={{ fontSize: 16 }} /> : <DarkModeIcon sx={{ fontSize: 16 }} />}
+          </IconButton>
+        </Tooltip>
+      </Box>
+      <Box sx={{ px: 1.5, pb: 1.5, pt: 0.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Avatar
           src={user?.photo_url ?? undefined}
-          sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: '0.85rem' }}
+          sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: '0.85rem', fontWeight: 700 }}
         >
           {user ? getInitials(user.nome) : '?'}
         </Avatar>
         <Box sx={{ flex: 1, overflow: 'hidden' }}>
-          <Typography variant="caption" fontWeight={600} noWrap display="block">
+          <Typography variant="caption" fontWeight={700} noWrap display="block" sx={{ color: 'text.primary' }}>
             {user?.nome ?? ''}
           </Typography>
           <Chip
             label={user?.role ?? ''}
             size="small"
             color={user?.role === 'Admin' ? 'primary' : 'default'}
-            sx={{ height: 16, fontSize: '0.6rem' }}
+            sx={{ height: 17, fontSize: '0.6rem', fontWeight: 700 }}
           />
         </Box>
         <Tooltip title={strings.auth.logout}>
-          <IconButton size="small" onClick={handleLogout} color="default">
-            <LogoutIcon fontSize="small" />
+          <IconButton
+            size="small"
+            onClick={handleLogout}
+            sx={{
+              color: 'text.secondary',
+              '&:hover': { color: 'error.main' },
+              transition: 'color 0.15s',
+            }}
+          >
+            <LogoutIcon sx={{ fontSize: 17 }} />
           </IconButton>
         </Tooltip>
       </Box>
@@ -238,7 +287,9 @@ export function AppShell() {
           sx={{
             bgcolor: 'background.paper',
             borderBottom: `1px solid ${theme.palette.divider}`,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            boxShadow: isDark
+              ? `0 1px 0 ${alpha('#ffffff', 0.06)}, 0 2px 12px ${alpha('#000', 0.4)}`
+              : `0 1px 0 ${alpha('#000', 0.06)}, 0 2px 8px ${alpha('#000', 0.04)}`,
             zIndex: theme.zIndex.appBar,
           }}
         >
@@ -305,7 +356,7 @@ export function AppShell() {
         {/* Page content */}
         <Box
           component="main"
-          sx={{ flex: 1, overflow: 'auto', p: { xs: 2, sm: 3 } }}
+          sx={{ flex: 1, overflow: 'auto', bgcolor: 'background.default' }}
         >
           <Outlet />
         </Box>

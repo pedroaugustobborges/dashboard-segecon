@@ -57,25 +57,18 @@ export interface CreateUserPayload {
 }
 
 export async function createUser(payload: CreateUserPayload) {
-  // Create auth user via Supabase Admin API (service role key needed on backend)
-  // For now, use the standard sign-up + profile insert approach
-  const { data, error } = await supabase.auth.admin.createUser({
-    email: payload.email,
-    password: payload.password,
-    email_confirm: true,
+  const { data, error } = await supabase.functions.invoke('create-user', {
+    body: {
+      email: payload.email,
+      password: payload.password,
+      nome: payload.nome,
+      role: payload.role,
+      entidades: payload.entidades,
+    },
   })
   if (error) throw error
-
-  const userId = data.user.id
-  const { error: profileError } = await supabase.from('profiles').insert({
-    id: userId,
-    nome: payload.nome,
-    role: payload.role,
-    entidades: payload.entidades,
-  })
-  if (profileError) throw profileError
-
-  return data.user
+  if (data?.error) throw new Error(data.error)
+  return data
 }
 
 export async function updateUserProfile(
