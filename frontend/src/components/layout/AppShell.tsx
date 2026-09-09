@@ -92,6 +92,7 @@ function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase()
 }
 
+
 // Section heading with flanking lines ── HEADING ──
 function SectionLabel({ label }: { label: string }) {
   return (
@@ -426,90 +427,119 @@ export function AppShell() {
           elevation={0}
           sx={{
             flexShrink: 0,
-            bgcolor: isDark ? alpha('#161b22', 0.92) : alpha('#ffffff', 0.92),
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
+            bgcolor: isDark ? alpha('#161b22', 0.95) : alpha('#ffffff', 0.95),
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            // Bottom: hairline border + teal gradient accent line
             borderBottom: `1px solid ${isDark ? alpha('#ffffff', 0.07) : alpha('#000', 0.07)}`,
             boxShadow: isDark
-              ? `0 1px 0 ${alpha('#ffffff', 0.05)}, 0 4px 20px ${alpha('#000', 0.35)}`
-              : `0 1px 0 ${alpha('#000', 0.05)}, 0 4px 12px ${alpha('#000', 0.04)}`,
+              ? `0 1px 0 ${alpha('#ffffff', 0.04)}, 0 6px 24px ${alpha('#000', 0.4)}`
+              : `0 1px 0 ${alpha('#000', 0.05)}, 0 4px 16px ${alpha('#000', 0.05)}`,
+            // Teal gradient accent at very bottom
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '2px',
+              background: `linear-gradient(90deg, ${primary} 0%, ${alpha(primary, 0.4)} 50%, transparent 100%)`,
+              pointerEvents: 'none',
+            },
           }}
         >
-          <Toolbar sx={{ height: TOPBAR_HEIGHT, position: 'relative', px: { xs: 2, sm: 3 } }}>
-            {/* Left: AGIR logo */}
-            <Box
-              component="img"
-              src="/agir_logo.png"
-              alt="AGIR"
-              sx={{
-                height: 34,
-                objectFit: 'contain',
-                opacity: isDark ? 0.85 : 1,
-                filter: isDark ? 'brightness(1.1)' : 'none',
-              }}
-            />
-
-            {/* Center: DaherLab logo — absolutely centered */}
-            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+          <Toolbar
+            sx={{
+              height: TOPBAR_HEIGHT,
+              minHeight: `${TOPBAR_HEIGHT}px !important`,
+              px: 2.5,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            {/* ── Left (flex:1) — AGIR ─────────────────────────────────────── */}
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
               <Box
                 component="img"
-                src="/logo_daherlab.png"
-                alt="DaherLab"
+                src={isDark ? '/agir_logo.png' : '/agir_logo_colorida.png'}
+                alt="AGIR"
                 sx={{
-                  height: 38,
-                  objectFit: 'contain',
-                  display: 'block',
-                  opacity: isDark ? 0.85 : 1,
+                  height: 30, objectFit: 'contain', display: 'block',
+                  opacity: isDark ? 0.88 : 1,
                   filter: isDark ? 'brightness(1.15)' : 'none',
                 }}
               />
             </Box>
 
-            {/* Right: Transformação Digital logo + user */}
-            <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* ── Center — DaherLab, shifted left to compensate for wider TD logo ── */}
+            <Box
+              component="img"
+              src={isDark ? '/logo_daherlab.png' : '/logo_daherlab_colorida.png'}
+              alt="DaherLab"
+              sx={{
+                height: 36, objectFit: 'contain', display: 'block', flexShrink: 0,
+                opacity: isDark ? 0.92 : 1,
+                filter: isDark ? 'brightness(1.15)' : 'none',
+                transform: 'translateX(-40px)',
+              }}
+            />
+
+            {/* ── Right (flex:1 → end) — TD logo + divider + user pill ─────── */}
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1.5 }}>
+
               <Box
                 component="img"
-                src="/logo_transformacao_digital.png"
+                src={isDark ? '/logo_transformacao_digital.png' : '/logo_transformacao_digital_colorida.png'}
                 alt="Transformação Digital"
                 sx={{
-                  height: 34,
-                  objectFit: 'contain',
-                  opacity: isDark ? 0.85 : 1,
+                  height: 30, objectFit: 'contain', display: 'block',
+                  opacity: isDark ? 0.88 : 1,
                   filter: isDark ? 'brightness(1.1)' : 'none',
                 }}
               />
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1.5 }} />
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{ my: 1.5, borderColor: isDark ? alpha('#ffffff', 0.08) : alpha('#000', 0.08) }}
+              />
+
+              {/* User pill */}
+              <Box
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 1,
+                  px: 1.25, py: 0.6,
+                  borderRadius: '12px',
+                  border: `1px solid ${isDark ? alpha('#ffffff', 0.08) : alpha('#000', 0.07)}`,
+                  bgcolor: isDark ? alpha('#ffffff', 0.04) : alpha('#000', 0.02),
+                  transition: 'border-color 0.15s, background-color 0.15s',
+                  '&:hover': {
+                    borderColor: alpha(primary, isDark ? 0.35 : 0.25),
+                    bgcolor: alpha(primary, isDark ? 0.07 : 0.04),
+                  },
+                }}
+              >
                 <Avatar
                   src={user?.photo_url ?? undefined}
                   sx={{
-                    width: 32,
-                    height: 32,
+                    width: 28, height: 28,
                     bgcolor: primary,
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    boxShadow: `0 0 0 2px ${alpha(primary, 0.3)}`,
+                    fontSize: '0.68rem', fontWeight: 700, flexShrink: 0,
+                    boxShadow: `0 0 0 2px ${alpha(primary, isDark ? 0.35 : 0.22)}`,
                   }}
                 >
                   {user ? getInitials(user.nome) : '?'}
                 </Avatar>
-                <Typography variant="body2" fontWeight={600} color="text.primary" noWrap sx={{ maxWidth: 140 }}>
+                <Typography
+                  sx={{
+                    fontSize: '0.8rem', fontWeight: 600, color: 'text.primary',
+                    maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}
+                >
                   {user?.nome ?? ''}
                 </Typography>
-                <Tooltip title={strings.auth.logout}>
-                  <IconButton
-                    size="small"
-                    onClick={handleLogout}
-                    sx={{
-                      color: 'text.disabled',
-                      '&:hover': { color: 'error.main', bgcolor: alpha('#f44336', 0.08) },
-                      transition: 'color 0.15s, background-color 0.15s',
-                    }}
-                  >
-                    <LogoutIcon sx={{ fontSize: 18 }} />
-                  </IconButton>
-                </Tooltip>
               </Box>
+
             </Box>
           </Toolbar>
         </AppBar>
