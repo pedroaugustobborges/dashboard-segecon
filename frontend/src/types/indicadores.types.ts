@@ -11,6 +11,7 @@ export interface DistributionItem {
   label: string
   value: number
   color?: string
+  median?: number
 }
 
 export interface LeadTimeData {

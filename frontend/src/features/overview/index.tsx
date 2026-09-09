@@ -1,4 +1,5 @@
-import { Box, Grid, Card, CardContent, Typography, Skeleton, useTheme, alpha } from '@mui/material'
+import { useState } from 'react'
+import { Box, Grid, Card, CardContent, Typography, Skeleton, useTheme, alpha, ToggleButtonGroup, ToggleButton } from '@mui/material'
 import HubIcon         from '@mui/icons-material/Hub'
 import BlockIcon        from '@mui/icons-material/Block'
 import TaskAltIcon      from '@mui/icons-material/TaskAlt'
@@ -17,11 +18,12 @@ import { strings }           from '../../i18n/strings.pt-BR'
 
 // Section wrapper — title with left accent bar + card
 function Section({
-  title, children, accentColor,
+  title, children, accentColor, headerRight,
 }: {
   title?: string
   children: React.ReactNode
   accentColor?: string
+  headerRight?: React.ReactNode
 }) {
   const theme  = useTheme()
   const isDark = theme.palette.mode === 'dark'
@@ -31,20 +33,23 @@ function Section({
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         {title && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Box
-              sx={{
-                width: 3,
-                height: 16,
-                borderRadius: 2,
-                flexShrink: 0,
-                bgcolor: accent,
-                boxShadow: isDark ? `0 0 8px ${alpha(accent, 0.7)}` : 'none',
-              }}
-            />
-            <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>
-              {title}
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  width: 3,
+                  height: 16,
+                  borderRadius: 2,
+                  flexShrink: 0,
+                  bgcolor: accent,
+                  boxShadow: isDark ? `0 0 8px ${alpha(accent, 0.7)}` : 'none',
+                }}
+              />
+              <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>
+                {title}
+              </Typography>
+            </Box>
+            {headerRight}
           </Box>
         )}
         {children}
@@ -62,6 +67,7 @@ const KPI_CONFIG = [
 
 export default function OverviewPage() {
   const [filters] = useGlobalFilters()
+  const [unitMode, setUnitMode] = useState<'count' | 'leadtime'>('count')
 
   const { data: processos = [], isLoading, isError } = useProcessos({
     ...filters,
@@ -141,14 +147,35 @@ export default function OverviewPage() {
             </Section>
           </Grid>
           <Grid item xs={12} md={5}>
-            <Section title={strings.overview.processosPorUnidade} accentColor="#7b1fa2">
+            <Section
+              title={unitMode === 'count' ? strings.overview.processosPorUnidade : 'Tempo Médio por Unidade'}
+              accentColor="#7b1fa2"
+              headerRight={
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  value={unitMode}
+                  onChange={(_, v) => v && setUnitMode(v as 'count' | 'leadtime')}
+                  sx={{
+                    '& .MuiToggleButton-root': {
+                      py: 0.25, px: 1, fontSize: '0.68rem', textTransform: 'none',
+                      lineHeight: 1.4, fontWeight: 500,
+                    },
+                  }}
+                >
+                  <ToggleButton value="count">Processos</ToggleButton>
+                  <ToggleButton value="leadtime">Lead Time</ToggleButton>
+                </ToggleButtonGroup>
+              }
+            >
               {isLoading
                 ? <Skeleton variant="rectangular" height={310} sx={{ borderRadius: 2 }} />
                 : <DistributionChart
                     title=""
-                    data={metrics.porUnidade}
+                    data={unitMode === 'count' ? metrics.porUnidade : metrics.leadTimeByUnidade}
                     height={310}
                     maxItems={12}
+                    valueLabel={unitMode === 'count' ? 'Processos' : 'Média (dias)'}
                   />
               }
             </Section>

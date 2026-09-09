@@ -2,26 +2,45 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Box, TextField, Button, Typography,
-  Alert, CircularProgress, InputAdornment, IconButton,
-  useTheme, alpha,
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
+  useTheme,
+  alpha,
 } from '@mui/material'
-import VisibilityIcon    from '@mui/icons-material/Visibility'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
-import { signIn }   from '../../services/authService'
-import { strings }  from '../../i18n/strings.pt-BR'
+import { signIn } from '../../services/authService'
+import { strings } from '../../i18n/strings.pt-BR'
 
 // ── Decorative floating orb ───────────────────────────────────────────────────
-function Orb({ size, top, left, color, blur }: {
-  size: number; top: string; left: string; color: string; blur: number
+function Orb({
+  size,
+  top,
+  left,
+  color,
+  blur,
+}: {
+  size: number
+  top: string
+  left: string
+  color: string
+  blur: number
 }) {
   return (
     <Box
       aria-hidden
       sx={{
         position: 'absolute',
-        width: size, height: size,
-        top, left,
+        width: size,
+        height: size,
+        top,
+        left,
         borderRadius: '50%',
         background: color,
         filter: `blur(${blur}px)`,
@@ -33,16 +52,16 @@ function Orb({ size, top, left, color, blur }: {
 }
 
 export default function LoginPage() {
-  const theme   = useTheme()
-  const isDark  = theme.palette.mode === 'dark'
-  const primary = theme.palette.primary.main   // teal
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const primary = theme.palette.primary.main // teal
 
   const navigate = useNavigate()
-  const [email,        setEmail]        = useState('')
-  const [password,     setPassword]     = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [loading,      setLoading]      = useState(false)
-  const [error,        setError]        = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -58,7 +77,7 @@ export default function LoginPage() {
     }
   }
 
-  const borderColor = alpha('#ffffff', 0.10)
+  const borderColor = alpha('#ffffff', 0.1)
 
   return (
     <Box
@@ -82,15 +101,34 @@ export default function LoginPage() {
         }}
       >
         {/* Decorative orbs */}
-        <Orb size={420} top="-100px"  left="-80px"  color={`radial-gradient(circle, ${alpha(primary, 0.55)}, transparent 70%)`} blur={60} />
-        <Orb size={300} top="55%"     left="60%"    color={`radial-gradient(circle, ${alpha('#0288d1', 0.4)}, transparent 70%)`}  blur={80} />
-        <Orb size={200} top="75%"     left="-40px"  color={`radial-gradient(circle, ${alpha(primary, 0.3)}, transparent 70%)`}  blur={50} />
+        <Orb
+          size={420}
+          top="-100px"
+          left="-80px"
+          color={`radial-gradient(circle, ${alpha(primary, 0.55)}, transparent 70%)`}
+          blur={60}
+        />
+        <Orb
+          size={300}
+          top="55%"
+          left="60%"
+          color={`radial-gradient(circle, ${alpha('#0288d1', 0.4)}, transparent 70%)`}
+          blur={80}
+        />
+        <Orb
+          size={200}
+          top="75%"
+          left="-40px"
+          color={`radial-gradient(circle, ${alpha(primary, 0.3)}, transparent 70%)`}
+          blur={50}
+        />
 
         {/* Subtle grid overlay */}
         <Box
           aria-hidden
           sx={{
-            position: 'absolute', inset: 0,
+            position: 'absolute',
+            inset: 0,
             backgroundImage: `
               linear-gradient(${alpha('#ffffff', 0.025)} 1px, transparent 1px),
               linear-gradient(90deg, ${alpha('#ffffff', 0.025)} 1px, transparent 1px)
@@ -101,13 +139,21 @@ export default function LoginPage() {
         />
 
         {/* Content */}
-        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+          }}
+        >
           {/* SiGCon brand mark */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
             <Box
               sx={{
-                width: 11, height: 11,
+                width: 11,
+                height: 11,
                 borderRadius: '50%',
                 flexShrink: 0,
                 background: `linear-gradient(135deg, ${primary}, ${alpha(primary, 0.6)})`,
@@ -131,7 +177,15 @@ export default function LoginPage() {
           </Box>
 
           {/* Main hero text — centred vertically */}
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', py: 6 }}>
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              py: 6,
+            }}
+          >
             <Typography
               sx={{
                 fontSize: '2.6rem',
@@ -142,7 +196,7 @@ export default function LoginPage() {
                 mb: 2,
               }}
             >
-              Gestão de contratos{' '}
+              Gestão de Contratos{' '}
               <Box
                 component="span"
                 sx={{
@@ -155,8 +209,15 @@ export default function LoginPage() {
                 inteligente.
               </Box>
             </Typography>
-            <Typography sx={{ fontSize: '1rem', color: alpha('#ffffff', 0.5), lineHeight: 1.6, maxWidth: 340 }}>
-              {strings.app.subtitle} — visibilidade completa de cada fase do processo contratual.
+            <Typography
+              sx={{
+                fontSize: '1rem',
+                color: alpha('#ffffff', 0.5),
+                lineHeight: 1.6,
+                maxWidth: 340,
+              }}
+            >
+              {strings.app.subtitle} visibilidade de cada fase do processo contratual.
             </Typography>
           </Box>
 
@@ -171,9 +232,9 @@ export default function LoginPage() {
             }}
           >
             {[
-              { src: '/agir_logo.png',                  alt: 'AGIR',                   h: 28 },
-              { src: '/logo_daherlab.png',              alt: 'DaherLab',               h: 32 },
-              { src: '/logo_transformacao_digital.png', alt: 'Transformação Digital',  h: 28 },
+              { src: '/agir_logo.png', alt: 'AGIR', h: 28 },
+              { src: '/logo_daherlab.png', alt: 'DaherLab', h: 32 },
+              { src: '/logo_transformacao_digital.png', alt: 'Transformação Digital', h: 28 },
             ].map(({ src, alt, h }) => (
               <Box
                 key={alt}
@@ -206,7 +267,6 @@ export default function LoginPage() {
         }}
       >
         <Box sx={{ width: '100%', maxWidth: 400 }}>
-
           {/* Mobile brand mark */}
           <Box
             sx={{
@@ -219,14 +279,19 @@ export default function LoginPage() {
           >
             <Box
               sx={{
-                width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
+                width: 9,
+                height: 9,
+                borderRadius: '50%',
+                flexShrink: 0,
                 background: `linear-gradient(135deg, ${primary}, ${alpha(primary, 0.6)})`,
                 boxShadow: `0 0 10px ${alpha(primary, 0.8)}`,
               }}
             />
             <Typography
               sx={{
-                fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.03em',
+                fontWeight: 800,
+                fontSize: '1.1rem',
+                letterSpacing: '-0.03em',
                 background: `linear-gradient(135deg, ${primary} 0%, ${isDark ? '#4db6ac' : theme.palette.primary.dark} 100%)`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -270,10 +335,7 @@ export default function LoginPage() {
             </Box>
 
             {error && (
-              <Alert
-                severity="error"
-                sx={{ mb: 2.5, borderRadius: '10px', fontSize: '0.82rem' }}
-              >
+              <Alert severity="error" sx={{ mb: 2.5, borderRadius: '10px', fontSize: '0.82rem' }}>
                 {error}
               </Alert>
             )}
@@ -337,9 +399,11 @@ export default function LoginPage() {
                         size="small"
                         sx={{ color: 'text.disabled' }}
                       >
-                        {showPassword
-                          ? <VisibilityOffIcon sx={{ fontSize: 18 }} />
-                          : <VisibilityIcon   sx={{ fontSize: 18 }} />}
+                        {showPassword ? (
+                          <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                        ) : (
+                          <VisibilityIcon sx={{ fontSize: 18 }} />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -377,9 +441,7 @@ export default function LoginPage() {
                   letterSpacing: '0.01em',
                 }}
               >
-                {loading
-                  ? <CircularProgress size={20} color="inherit" />
-                  : strings.auth.login}
+                {loading ? <CircularProgress size={20} color="inherit" /> : strings.auth.login}
               </Button>
             </Box>
           </Box>

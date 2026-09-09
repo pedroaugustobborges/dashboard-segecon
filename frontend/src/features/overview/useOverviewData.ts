@@ -9,6 +9,37 @@ import type { ProcessoContrato, FaseKey } from '../../types/processoContrato.typ
 import type { DistributionItem } from '../../types/indicadores.types'
 import { strings } from '../../i18n/strings.pt-BR'
 
+// Total process lead time: fase1_data_inicio_sc → latest non-null phase fim
+const FIM_FIELDS: Array<keyof ProcessoContrato> = [
+  'fase8_data_fim_publicacao_contrato',
+  'fase7_data_fim_validacao_anexos_contrato',
+  'fase6_data_fim_assinatura_contrato',
+  'fase5_data_fim_aprovacao_contrato',
+  'fase4_data_fim_analise_cotacao',
+  'fase3_data_fim_cotacao',
+  'fase2_data_fim_prep_cotacao',
+  'fase1_data_fim_sc',
+]
+
+function totalLeadTimeDays(p: ProcessoContrato): number | null {
+  const start = p.fase1_data_inicio_sc
+  if (!start) return null
+  let latestFim: string | null = null
+  for (const field of FIM_FIELDS) {
+    const v = p[field] as string | null
+    if (v) { latestFim = v; break }
+  }
+  if (!latestFim) return null
+  const days = (new Date(latestFim).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24)
+  return Math.round(days * 10) / 10
+}
+
+function medianOf(sorted: number[]): number {
+  if (!sorted.length) return 0
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+
 function countBy<T>(arr: T[], key: (item: T) => string | null | undefined): DistributionItem[] {
   const counts: Record<string, number> = {}
   for (const item of arr) {
@@ -74,11 +105,33 @@ export function useOverviewData(processos: ProcessoContrato[]) {
         value,
       }))
 
-    // By entidade
+    // By entidade (count)
     const porUnidade = countBy(
       processos.filter((p) => !p.solicitacao_cancelada),
       (p) => p.entidade,
     )
+
+    // Lead time by entidade (avg + median total days)
+    const ltByUnit: Record<string, number[]> = {}
+    for (const p of processos) {
+      if (p.solicitacao_cancelada) continue
+      const entidade = p.entidade ?? 'N/A'
+      const days = totalLeadTimeDays(p)
+      if (days === null || days < 0) continue
+      if (!ltByUnit[entidade]) ltByUnit[entidade] = []
+      ltByUnit[entidade].push(days)
+    }
+    const leadTimeByUnidade: DistributionItem[] = Object.entries(ltByUnit)
+      .map(([label, days]) => {
+        days.sort((a, b) => a - b)
+        const avg = days.reduce((s, v) => s + v, 0) / days.length
+        return {
+          label,
+          value: Math.round(avg * 10) / 10,
+          median: Math.round(medianOf(days) * 10) / 10,
+        }
+      })
+      .sort((a, b) => b.value - a.value)
 
     // By prioridade
     const porPrioridade: DistributionItem[] = countBy(
@@ -119,6 +172,7 @@ export function useOverviewData(processos: ProcessoContrato[]) {
       valorFormatted,
       phaseDistribution,
       porUnidade,
+      leadTimeByUnidade,
       porPrioridade,
       topDepartamentos,
       analiseContratoItems,
