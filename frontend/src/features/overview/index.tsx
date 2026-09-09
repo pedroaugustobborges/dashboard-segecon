@@ -61,7 +61,6 @@ const KPI_CONFIG = [
 ] as const
 
 export default function OverviewPage() {
-  const theme  = useTheme()
   const [filters] = useGlobalFilters()
 
   const { data: processos = [], isLoading, isError } = useProcessos({
