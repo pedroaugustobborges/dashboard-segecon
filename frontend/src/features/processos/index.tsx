@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Typography, Tabs, Tab } from '@mui/material'
+import { Box, Typography, Tabs, Tab, useTheme, alpha } from '@mui/material'
 import { GlobalFilterBar } from '../../components/filters/GlobalFilterBar'
 import { ProcessDetailTable } from '../../components/tables/ProcessDetailTable'
 import { UnavailableIndicator } from '../../components/charts/UnavailableIndicator'
@@ -18,13 +18,17 @@ interface TabPanelProps {
 
 function TabPanel({ index, value, children }: TabPanelProps) {
   return (
-    <Box role="tabpanel" hidden={value !== index} sx={{ pt: 3 }}>
+    <Box role="tabpanel" hidden={value !== index} sx={{ pt: 2.5 }}>
       {value === index && children}
     </Box>
   )
 }
 
 export default function ProcessosPage() {
+  const theme  = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const primary = theme.palette.primary.main
+
   const [tab, setTab] = useState(0)
   const [filters] = useGlobalFilters()
 
@@ -45,25 +49,67 @@ export default function ProcessosPage() {
 
   const rows = useProcessoTableRows(processos, fase1Records)
 
+  const tabLabels = [
+    strings.processos.tabSolicitacao,
+    strings.processos.tabVigencia,
+    strings.processos.tabConsumo,
+    strings.processos.tabPagamento,
+  ]
+
   return (
     <Box>
       <GlobalFilterBar />
 
       <Box sx={{ px: 1.5, py: 1.5 }}>
-        <Typography variant="h5" fontWeight={700} mb={2}>
+        <Typography variant="h5" fontWeight={700} mb={2.5}>
           {strings.processos.title}
         </Typography>
 
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          sx={{ borderBottom: 1, borderColor: 'divider', mb: 0 }}
+        {/* ── Tabs ──────────────────────────────────────────────────────────── */}
+        <Box
+          sx={{
+            mb: 0,
+            borderBottom: `1px solid ${isDark ? alpha('#ffffff', 0.07) : alpha('#000', 0.08)}`,
+          }}
         >
-          <Tab label={strings.processos.tabSolicitacao} />
-          <Tab label={strings.processos.tabVigencia} />
-          <Tab label={strings.processos.tabConsumo} />
-          <Tab label={strings.processos.tabPagamento} />
-        </Tabs>
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            sx={{
+              minHeight: 40,
+              '& .MuiTabs-indicator': {
+                height: 2,
+                borderRadius: '2px 2px 0 0',
+                bgcolor: primary,
+                boxShadow: isDark ? `0 0 8px ${alpha(primary, 0.6)}` : 'none',
+              },
+              '& .MuiTab-root': {
+                minHeight: 40,
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                letterSpacing: '0.01em',
+                textTransform: 'none',
+                color: 'text.secondary',
+                px: 2,
+                py: 0,
+                borderRadius: '8px 8px 0 0',
+                transition: 'color 0.15s, background-color 0.15s',
+                '&:hover': {
+                  color: 'text.primary',
+                  bgcolor: isDark ? alpha('#ffffff', 0.04) : alpha('#000', 0.03),
+                },
+                '&.Mui-selected': {
+                  color: primary,
+                  fontWeight: 700,
+                },
+              },
+            }}
+          >
+            {tabLabels.map((label) => (
+              <Tab key={label} label={label} disableRipple />
+            ))}
+          </Tabs>
+        </Box>
 
         {/* Tab 0: Solicitação — real data */}
         <TabPanel value={tab} index={0}>
@@ -77,7 +123,7 @@ export default function ProcessosPage() {
           />
         </TabPanel>
 
-        {/* Tab 1: Vigência — Gap 5 */}
+        {/* Tab 1: Vigência — Gap */}
         <TabPanel value={tab} index={1}>
           <Box sx={{ mt: 4 }}>
             <UnavailableIndicator
@@ -88,7 +134,7 @@ export default function ProcessosPage() {
           </Box>
         </TabPanel>
 
-        {/* Tab 2: Consumo — Gap 5 */}
+        {/* Tab 2: Consumo — Gap */}
         <TabPanel value={tab} index={2}>
           <Box sx={{ mt: 4 }}>
             <UnavailableIndicator
@@ -99,7 +145,7 @@ export default function ProcessosPage() {
           </Box>
         </TabPanel>
 
-        {/* Tab 3: Pagamento — Gap 5 */}
+        {/* Tab 3: Pagamento — Gap */}
         <TabPanel value={tab} index={3}>
           <Box sx={{ mt: 4 }}>
             <UnavailableIndicator

@@ -5,14 +5,15 @@
 import { useState, useMemo } from 'react'
 import {
   Box, Table, TableHead, TableBody, TableRow, TableCell,
-  TableSortLabel, TablePagination, TableContainer, Paper,
+  TableSortLabel, TablePagination, TableContainer,
   TextField, InputAdornment, IconButton, Tooltip, Skeleton,
-  Typography,
+  Typography, useTheme, alpha, Chip,
 } from '@mui/material'
-import SearchIcon from '@mui/icons-material/Search'
-import DownloadIcon from '@mui/icons-material/Download'
+import SearchIcon      from '@mui/icons-material/Search'
+import DownloadIcon    from '@mui/icons-material/FileDownload'
+import InboxIcon       from '@mui/icons-material/Inbox'
 import { exportToCsv } from '../../services/exportCsv'
-import { strings } from '../../i18n/strings.pt-BR'
+import { strings }     from '../../i18n/strings.pt-BR'
 
 export interface ColumnDef<T> {
   key: string
@@ -40,10 +41,14 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 export function ProcessDetailTable<T extends Record<string, unknown>>({
   columns, rows, loading, searchFields = [], filename = 'processos', rowKey,
 }: ProcessDetailTableProps<T>) {
-  const [search, setSearch] = useState('')
-  const [sortKey, setSortKey] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
-  const [page, setPage] = useState(0)
+  const theme   = useTheme()
+  const isDark  = theme.palette.mode === 'dark'
+  const primary = theme.palette.primary.main
+
+  const [search, setSearch]         = useState('')
+  const [sortKey, setSortKey]       = useState<string | null>(null)
+  const [sortDir, setSortDir]       = useState<SortDir>('asc')
+  const [page, setPage]             = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(25)
 
   // Filter by search text
@@ -104,48 +109,104 @@ export function ProcessDetailTable<T extends Record<string, unknown>>({
     exportToCsv(filename, exportRows as Record<string, unknown>[], headerMap)
   }
 
-  // Loading state
+  // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
       <Box>
-        <Skeleton variant="rectangular" height={48} sx={{ mb: 1, borderRadius: 1 }} />
+        <Skeleton variant="rectangular" height={40} sx={{ mb: 2, borderRadius: 2 }} />
         {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} variant="rectangular" height={40} sx={{ mb: 0.5, borderRadius: 1 }} />
+          <Skeleton key={i} variant="rectangular" height={44} sx={{ mb: 0.5, borderRadius: 1 }} />
         ))}
       </Box>
     )
   }
 
+  const headerBg   = isDark ? alpha('#ffffff', 0.05) : alpha('#000000', 0.025)
+  const rowHoverBg = isDark ? alpha(primary, 0.09)   : alpha(primary, 0.04)
+  const borderColor = isDark ? alpha('#ffffff', 0.07) : alpha('#000000', 0.08)
+
   return (
     <Box>
-      {/* Toolbar: search + export */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+      {/* ── Toolbar ───────────────────────────────────────────────────────── */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+
+        {/* Search field */}
         <TextField
           size="small"
           placeholder={strings.processos.search}
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
-          sx={{ flex: 1, maxWidth: 480 }}
+          sx={{
+            flex: 1,
+            maxWidth: 440,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '12px',
+              bgcolor: isDark ? alpha('#ffffff', 0.04) : alpha('#000', 0.025),
+              '& fieldset': { borderColor },
+              '&:hover fieldset': { borderColor: alpha(primary, 0.4) },
+              '&.Mui-focused fieldset': {
+                borderColor: primary,
+                boxShadow: `0 0 0 3px ${alpha(primary, 0.12)}`,
+              },
+            },
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon fontSize="small" color="action" />
+                <SearchIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
               </InputAdornment>
             ),
           }}
         />
+
+        {/* Row count */}
+        <Chip
+          label={`${sorted.length} / ${rows.length}`}
+          size="small"
+          sx={{
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            height: 26,
+            bgcolor: isDark ? alpha('#ffffff', 0.06) : alpha('#000', 0.04),
+            border: `1px solid ${borderColor}`,
+            color: 'text.secondary',
+          }}
+        />
+
+        {/* Export */}
         <Tooltip title={strings.processos.exportCsv}>
-          <IconButton onClick={handleExport} size="small" color="primary">
-            <DownloadIcon />
+          <IconButton
+            onClick={handleExport}
+            size="small"
+            sx={{
+              border: `1px solid ${borderColor}`,
+              borderRadius: '10px',
+              color: 'text.secondary',
+              bgcolor: isDark ? alpha('#ffffff', 0.04) : alpha('#000', 0.02),
+              '&:hover': {
+                color: primary,
+                borderColor: alpha(primary, 0.4),
+                bgcolor: alpha(primary, 0.08),
+              },
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <DownloadIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Tooltip>
-        <Typography variant="caption" color="text.secondary">
-          {sorted.length} {strings.processos.of} {rows.length}
-        </Typography>
       </Box>
 
-      {/* Table */}
-      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+      {/* ── Table ─────────────────────────────────────────────────────────── */}
+      <TableContainer
+        sx={{
+          borderRadius: '14px',
+          border: `1px solid ${borderColor}`,
+          boxShadow: isDark
+            ? `0 4px 24px ${alpha('#000', 0.3)}`
+            : `0 2px 12px ${alpha('#000', 0.06)}`,
+          overflow: 'hidden',
+        }}
+      >
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
@@ -153,13 +214,30 @@ export function ProcessDetailTable<T extends Record<string, unknown>>({
                 <TableCell
                   key={col.key}
                   align={col.align ?? 'left'}
-                  sx={{ fontWeight: 700, whiteSpace: 'nowrap', width: col.width, bgcolor: 'grey.50' }}
+                  sx={{
+                    width: col.width,
+                    whiteSpace: 'nowrap',
+                    bgcolor: headerBg,
+                    borderBottom: `1px solid ${borderColor}`,
+                    py: 1.25,
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: 'text.secondary',
+                    backdropFilter: 'blur(8px)',
+                  }}
                 >
                   {col.sortable !== false ? (
                     <TableSortLabel
                       active={sortKey === col.key}
                       direction={sortKey === col.key ? sortDir : 'asc'}
                       onClick={() => handleSort(col.key)}
+                      sx={{
+                        '&.Mui-active': { color: primary },
+                        '&.Mui-active .MuiTableSortLabel-icon': { color: primary },
+                        '& .MuiTableSortLabel-icon': { fontSize: 14 },
+                      }}
                     >
                       {col.header}
                     </TableSortLabel>
@@ -173,19 +251,49 @@ export function ProcessDetailTable<T extends Record<string, unknown>>({
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} align="center" sx={{ py: 6, color: 'text.disabled' }}>
-                  {strings.processos.noResults}
+                <TableCell colSpan={columns.length}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      py: 7,
+                      color: 'text.disabled',
+                    }}
+                  >
+                    <InboxIcon sx={{ fontSize: 40, opacity: 0.4 }} />
+                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                      {strings.processos.noResults}
+                    </Typography>
+                  </Box>
                 </TableCell>
               </TableRow>
             ) : (
-              paginated.map((row) => (
+              paginated.map((row, idx) => (
                 <TableRow
                   key={rowKey(row)}
-                  hover
-                  sx={{ '&:last-child td': { border: 0 } }}
+                  sx={{
+                    bgcolor: idx % 2 === 1
+                      ? (isDark ? alpha('#ffffff', 0.015) : alpha('#000', 0.008))
+                      : 'transparent',
+                    '&:hover': { bgcolor: rowHoverBg },
+                    '&:last-child td': { border: 0 },
+                    transition: 'background-color 0.12s ease',
+                  }}
                 >
                   {columns.map((col) => (
-                    <TableCell key={col.key} align={col.align ?? 'left'} sx={{ whiteSpace: 'nowrap' }}>
+                    <TableCell
+                      key={col.key}
+                      align={col.align ?? 'left'}
+                      sx={{
+                        whiteSpace: 'nowrap',
+                        py: 1,
+                        fontSize: '0.8125rem',
+                        borderBottom: `1px solid ${borderColor}`,
+                        color: 'text.primary',
+                      }}
+                    >
                       {col.renderCell ? col.renderCell(row) : (col.getValue(row) ?? '—')}
                     </TableCell>
                   ))}
@@ -196,7 +304,7 @@ export function ProcessDetailTable<T extends Record<string, unknown>>({
         </Table>
       </TableContainer>
 
-      {/* Pagination */}
+      {/* ── Pagination ────────────────────────────────────────────────────── */}
       <TablePagination
         component="div"
         count={sorted.length}
@@ -207,6 +315,14 @@ export function ProcessDetailTable<T extends Record<string, unknown>>({
         rowsPerPageOptions={PAGE_SIZE_OPTIONS}
         labelRowsPerPage={strings.processos.rowsPerPage}
         labelDisplayedRows={({ from, to, count }) => `${from}–${to} ${strings.processos.of} ${count}`}
+        sx={{
+          mt: 0.5,
+          '& .MuiTablePagination-toolbar': { px: 0 },
+          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+            fontSize: '0.78rem',
+            color: 'text.secondary',
+          },
+        }}
       />
     </Box>
   )
