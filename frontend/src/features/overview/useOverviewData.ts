@@ -5,34 +5,9 @@
 import { useMemo } from 'react'
 import { derivePhaseInfo } from '../../hooks/useDerivedStatus'
 import { prioridadeColors } from '../../theme/theme'
+import { totalLeadTimeDays, PHASE_LABELS } from '../../utils/processoUtils'
 import type { ProcessoContrato, FaseKey } from '../../types/processoContrato.types'
 import type { DistributionItem } from '../../types/indicadores.types'
-import { strings } from '../../i18n/strings.pt-BR'
-
-// Total process lead time: fase1_data_inicio_sc → latest non-null phase fim
-const FIM_FIELDS: Array<keyof ProcessoContrato> = [
-  'fase8_data_fim_publicacao_contrato',
-  'fase7_data_fim_validacao_anexos_contrato',
-  'fase6_data_fim_assinatura_contrato',
-  'fase5_data_fim_aprovacao_contrato',
-  'fase4_data_fim_analise_cotacao',
-  'fase3_data_fim_cotacao',
-  'fase2_data_fim_prep_cotacao',
-  'fase1_data_fim_sc',
-]
-
-function totalLeadTimeDays(p: ProcessoContrato): number | null {
-  const start = p.fase1_data_inicio_sc
-  if (!start) return null
-  let latestFim: string | null = null
-  for (const field of FIM_FIELDS) {
-    const v = p[field] as string | null
-    if (v) { latestFim = v; break }
-  }
-  if (!latestFim) return null
-  const days = (new Date(latestFim).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24)
-  return Math.round(days * 10) / 10
-}
 
 function medianOf(sorted: number[]): number {
   if (!sorted.length) return 0
@@ -49,17 +24,6 @@ function countBy<T>(arr: T[], key: (item: T) => string | null | undefined): Dist
   return Object.entries(counts)
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value)
-}
-
-const PHASE_LABELS: Record<FaseKey, string> = {
-  1: strings.phases.fase1Short,
-  2: strings.phases.fase2Short,
-  3: strings.phases.fase3Short,
-  4: strings.phases.fase4Short,
-  5: strings.phases.fase5Short,
-  6: strings.phases.fase6Short,
-  7: strings.phases.fase7Short,
-  8: strings.phases.fase8Short,
 }
 
 export function useOverviewData(processos: ProcessoContrato[]) {
@@ -170,6 +134,24 @@ export function useOverviewData(processos: ProcessoContrato[]) {
       })
       .sort((a, b) => b.value - a.value)
 
+    // Drill-down maps: bar label → list of processes (for click-through drawers)
+    const processosByUnidade = new Map<string, ProcessoContrato[]>()
+    const processosByPhaseLabel = new Map<string, ProcessoContrato[]>()
+    for (const p of processos) {
+      if (p.solicitacao_cancelada) continue
+      // by unit
+      const u = p.entidade ?? 'N/A'
+      if (!processosByUnidade.has(u)) processosByUnidade.set(u, [])
+      processosByUnidade.get(u)!.push(p)
+      // by current phase label (active only)
+      const { currentPhase } = derivePhaseInfo(p)
+      if (currentPhase !== null) {
+        const label = PHASE_LABELS[currentPhase as FaseKey] ?? `Fase ${currentPhase}`
+        if (!processosByPhaseLabel.has(label)) processosByPhaseLabel.set(label, [])
+        processosByPhaseLabel.get(label)!.push(p)
+      }
+    }
+
     // Status distributions for donuts
     const analiseContratoItems: DistributionItem[] = Object.entries(analiseContratoStatus)
       .map(([label, value]) => ({ label, value }))
@@ -200,6 +182,8 @@ export function useOverviewData(processos: ProcessoContrato[]) {
       leadTimeByDepartamento,
       analiseContratoItems,
       aprovacaoItems,
+      processosByUnidade,
+      processosByPhaseLabel,
     }
   }, [processos])
 }

@@ -9,6 +9,7 @@ import { KpiCard }           from '../../components/charts/KpiCard'
 import { DistributionChart } from '../../components/charts/DistributionChart'
 import { LeadTimeChart }     from '../../components/charts/LeadTimeChart'
 import { PriorityPieChart }  from '../../components/charts/PriorityPieChart'
+import { ProcessDrawer }     from '../../components/layout/ProcessDrawer'
 import { useProcessos }      from '../../hooks/useProcessoContrato'
 import { useLeadTime }       from '../../hooks/useLeadTime'
 import { useGlobalFilters }  from '../../hooks/useGlobalFilters'
@@ -69,6 +70,8 @@ export default function OverviewPage() {
   const [filters] = useGlobalFilters()
   const [unitMode, setUnitMode] = useState<'count' | 'leadtime'>('count')
   const [deptMode, setDeptMode] = useState<'count' | 'leadtime'>('count')
+  const [unitDrawer, setUnitDrawer]   = useState<string | null>(null)
+  const [phaseDrawer, setPhaseDrawer] = useState<string | null>(null)
 
   const { data: processos = [], isLoading, isError } = useProcessos({
     ...filters,
@@ -86,6 +89,7 @@ export default function OverviewPage() {
   ]
 
   return (
+    <>
     <Box>
       <GlobalFilterBar />
 
@@ -123,6 +127,7 @@ export default function OverviewPage() {
                     data={metrics.phaseDistribution}
                     height={268}
                     horizontal={true}
+                    onBarClick={(label) => setPhaseDrawer(label)}
                   />
               }
             </Section>
@@ -177,6 +182,7 @@ export default function OverviewPage() {
                     height={310}
                     maxItems={12}
                     valueLabel={unitMode === 'count' ? 'Processos' : 'Média (dias)'}
+                    onBarClick={(label) => setUnitDrawer(label)}
                   />
               }
             </Section>
@@ -250,5 +256,24 @@ export default function OverviewPage() {
 
       </Box>
     </Box>
+
+    {/* ── Drill-down drawers ────────────────────────────────────────────────── */}
+    <ProcessDrawer
+      open={unitDrawer !== null}
+      onClose={() => setUnitDrawer(null)}
+      title={unitDrawer ?? ''}
+      subtitle="Processos por Unidade"
+      accentColor="#7b1fa2"
+      processes={unitDrawer ? (metrics.processosByUnidade.get(unitDrawer) ?? []) : []}
+    />
+    <ProcessDrawer
+      open={phaseDrawer !== null}
+      onClose={() => setPhaseDrawer(null)}
+      title={phaseDrawer ?? ''}
+      subtitle="Distribuição por Fase Atual"
+      accentColor="#0288d1"
+      processes={phaseDrawer ? (metrics.processosByPhaseLabel.get(phaseDrawer) ?? []) : []}
+    />
+    </>
   )
 }
