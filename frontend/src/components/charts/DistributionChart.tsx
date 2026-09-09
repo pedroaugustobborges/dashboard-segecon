@@ -179,12 +179,12 @@ export function DistributionChart({
             <XAxis type="number" tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
             <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
             <RTooltip
-              content={tooltipRenderer}
+              content={tooltipRenderer as any}
               cursor={{ fill: isDark ? alpha('#ffffff', 0.04) : alpha('#000000', 0.04) }}
             />
             <Bar
               dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22}
-              onClick={onBarClick ? (d: ChartEntry) => onBarClick(d.name) : undefined}
+              onClick={onBarClick ? (d: any) => onBarClick(d.name) : undefined}
               style={{ cursor: onBarClick ? 'pointer' : undefined }}
             >
               {chartData.map((entry, i) => (
@@ -198,12 +198,12 @@ export function DistributionChart({
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: tickColor }} interval={0} angle={-30} textAnchor="end" axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: tickColor }} axisLine={false} tickLine={false} />
             <RTooltip
-              content={tooltipRenderer}
+              content={tooltipRenderer as any}
               cursor={{ fill: isDark ? alpha('#ffffff', 0.04) : alpha('#000000', 0.04) }}
             />
             <Bar
               dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40}
-              onClick={onBarClick ? (d: ChartEntry) => onBarClick(d.name) : undefined}
+              onClick={onBarClick ? (d: any) => onBarClick(d.name) : undefined}
               style={{ cursor: onBarClick ? 'pointer' : undefined }}
             >
               {chartData.map((entry, i) => (

@@ -2,13 +2,15 @@
 // Uses Recharts Treemap with a fully custom SVG content renderer so tiles
 // match the dashboard's dark/light palette exactly.
 
+import React from 'react'
 import { Box, Typography, Skeleton, useTheme, alpha } from '@mui/material'
 import { Treemap, ResponsiveContainer, Tooltip } from 'recharts'
 
 export interface TreemapGroup {
   name: string
   color?: string
-  children: { name: string; size: number; color?: string }[]
+  children: { name: string; size: number; color?: string; [key: string]: any }[]
+  [key: string]: any
 }
 
 interface TreemapChartProps {
@@ -24,7 +26,7 @@ function truncate(text: string, maxPx: number, fontSize = 9): string {
   return text.length <= max ? text : text.slice(0, max - 1) + '…'
 }
 
-function renderContent(props: any, isDark: boolean) {
+function renderContent(props: any, isDark: boolean): React.ReactElement {
   const { x, y, width, height, depth, name, value, color } = props
   if (!width || !height || width < 4 || height < 4) return null
 
@@ -107,7 +109,7 @@ function renderContent(props: any, isDark: boolean) {
     )
   }
 
-  return null
+  return <></>
 }
 
 // ── Custom tooltip ─────────────────────────────────────────────────────────────
@@ -166,7 +168,7 @@ export function TreemapChart({ data, loading, height = 310 }: TreemapChartProps)
         data={data}
         dataKey="size"
         aspectRatio={4 / 3}
-        content={(props: any) => renderContent(props, isDark)}
+        content={(props: any) => renderContent(props, isDark) as any}
       >
         <Tooltip
           content={(props: any) => <CustomTooltip {...props} isDark={isDark} />}
