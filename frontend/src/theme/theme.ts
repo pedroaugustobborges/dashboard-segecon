@@ -12,10 +12,12 @@ const teal = {
 }
 
 // ── Semantic chart colors — referenced by every chart, never hardcoded ────────
+// Keys must match the exact solicitacao_tipo values stored in the database.
+// Scale: yellow (planned) → red (urgent) → dark-red (immediate).
 export const prioridadeColors: Record<string, string> = {
-  Imediata: '#0288d1',
-  Urgente:  '#f57c00',
-  Programa: '#00897b',
+  Imediata:   '#f59e0b',  // amber-400 — yellow, high visibility but not alarm
+  Urgente:    '#ef4444',  // red-500   — clear red alarm signal
+  Programada: '#3b82f6',  // blue-500  — calm blue, planned/steady
 }
 
 export const phaseColors: Record<number, string> = {

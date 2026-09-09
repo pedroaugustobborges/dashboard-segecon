@@ -6,7 +6,7 @@ export interface ProcessoContrato {
   id_controle_catalogo: number | null
   id_controle_contrato: number | null
   entidade: string | null
-  solicitacao_tipo: 'Imediata' | 'Urgente' | 'Programa' | string | null
+  solicitacao_tipo: 'Imediata' | 'Urgente' | 'Programada' | string | null
   solicitacao_numero: string | null
   solicitacao_tipo_compra: string | null
   solicitacao_data_importacao: string | null
