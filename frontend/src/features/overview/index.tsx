@@ -6,11 +6,13 @@ import {
   CardContent,
   Typography,
   Skeleton,
+  Tooltip,
   useTheme,
   alpha,
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import HubIcon from '@mui/icons-material/Hub'
 import BlockIcon from '@mui/icons-material/Block'
 import TaskAltIcon from '@mui/icons-material/TaskAlt'
@@ -24,12 +26,16 @@ import { LeadTimeChart } from '../../components/charts/LeadTimeChart'
 import { PriorityPieChart } from '../../components/charts/PriorityPieChart'
 import { ProcessDrawer } from '../../components/layout/ProcessDrawer'
 import { PictogramChart } from '../../components/charts/PictogramChart'
+import { HeatmapChart, type HeatmapRow } from '../../components/charts/HeatmapChart'
 import { useProcessos } from '../../hooks/useProcessoContrato'
 import { useLeadTime } from '../../hooks/useLeadTime'
 import { useGlobalFilters } from '../../hooks/useGlobalFilters'
 import { useFase1AnaliseReserva } from '../../hooks/useFase1AnaliseReserva'
 import { useOverviewData } from './useOverviewData'
-import { totalLeadTimeDays } from '../../utils/processoUtils'
+import { totalLeadTimeDays, PHASE_LABELS } from '../../utils/processoUtils'
+import { derivePhaseInfo } from '../../hooks/useDerivedStatus'
+import { phaseColors } from '../../theme/theme'
+import type { FaseKey } from '../../types/processoContrato.types'
 import { prioridadeColors } from '../../theme/theme'
 import { strings } from '../../i18n/strings.pt-BR'
 
@@ -39,11 +45,13 @@ function Section({
   children,
   accentColor,
   headerRight,
+  titleTooltip,
 }: {
   title?: string
   children: React.ReactNode
   accentColor?: string
   headerRight?: React.ReactNode
+  titleTooltip?: string
 }) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
@@ -77,6 +85,13 @@ function Section({
               >
                 {title}
               </Typography>
+              {titleTooltip && (
+                <Tooltip title={titleTooltip} arrow placement="top">
+                  <InfoOutlinedIcon
+                    sx={{ fontSize: 14, color: 'text.disabled', cursor: 'help', flexShrink: 0 }}
+                  />
+                </Tooltip>
+              )}
             </Box>
             {headerRight}
           </Box>
@@ -182,6 +197,33 @@ export default function OverviewPage() {
       .sort((a, b) => b.value - a.value)
   }, [reservaRecords, processos])
 
+  const HEATMAP_PHASES = [1, 2, 3, 4, 5, 6, 7, 8] as FaseKey[]
+
+  const heatmapData = useMemo((): HeatmapRow[] => {
+    const matrix: Record<string, Record<number, number>> = {}
+    for (const [nome, procs] of processosByAnalista) {
+      for (const p of procs) {
+        if (p.solicitacao_cancelada) continue
+        const { currentPhase } = derivePhaseInfo(p)
+        if (!currentPhase) continue
+        if (!matrix[nome]) matrix[nome] = {}
+        matrix[nome][currentPhase] = (matrix[nome][currentPhase] ?? 0) + 1
+      }
+    }
+    return Object.entries(matrix)
+      .map(([entity, phaseCounts]) => ({
+        entity,
+        total: Object.values(phaseCounts).reduce((s, v) => s + v, 0),
+        cells: HEATMAP_PHASES.map((phase) => ({
+          phase,
+          label: PHASE_LABELS[phase],
+          count: phaseCounts[phase] ?? 0,
+          color: phaseColors[phase] ?? '#00897b',
+        })),
+      }))
+      .sort((a, b) => b.total - a.total)
+  }, [processosByAnalista])
+
   const metrics = useOverviewData(processos)
   const leadTimeData = useLeadTime(processos.filter((p) => !p.solicitacao_cancelada))
 
@@ -270,7 +312,7 @@ export default function OverviewPage() {
             </Grid>
           </Grid>
 
-          {/* ── Row 3: Lead time + By unit ───────────────────────────────────── */}
+          {/* ── Row 3: Lead time + Treemap (fase × entidade) ─────────────────── */}
           <Grid container spacing={2} mb={2}>
             <Grid item xs={12} md={7}>
               <Section>
@@ -279,46 +321,15 @@ export default function OverviewPage() {
             </Grid>
             <Grid item xs={12} md={5}>
               <Section
-                title={
-                  unitMode === 'count'
-                    ? strings.overview.processosPorUnidade
-                    : 'Tempo Médio por Unidade'
-                }
-                accentColor="#7b1fa2"
-                headerRight={
-                  <ToggleButtonGroup
-                    size="small"
-                    exclusive
-                    value={unitMode}
-                    onChange={(_, v) => v && setUnitMode(v as 'count' | 'leadtime')}
-                    sx={{
-                      '& .MuiToggleButton-root': {
-                        py: 0.25,
-                        px: 1,
-                        fontSize: '0.68rem',
-                        textTransform: 'none',
-                        lineHeight: 1.4,
-                        fontWeight: 500,
-                      },
-                    }}
-                  >
-                    <ToggleButton value="count">Processos</ToggleButton>
-                    <ToggleButton value="leadtime">Lead Time</ToggleButton>
-                  </ToggleButtonGroup>
-                }
+                title="Analistas × Fase Atual"
+                accentColor="#00897b"
+                titleTooltip="O total aqui pode ser menor do que no pictograma porque processos cancelados e processos ainda sem fase iniciada são excluídos. Ou seja, apenas processos ativos e concluídos têm uma fase atual para exibir."
               >
-                {isLoading ? (
-                  <Skeleton variant="rectangular" height={310} sx={{ borderRadius: 2 }} />
-                ) : (
-                  <DistributionChart
-                    title=""
-                    data={unitMode === 'count' ? metrics.porUnidade : metrics.leadTimeByUnidade}
-                    height={310}
-                    maxItems={12}
-                    valueLabel={unitMode === 'count' ? 'Processos' : 'Média (dias)'}
-                    onBarClick={(label) => setUnitDrawer(label)}
-                  />
-                )}
+                <HeatmapChart
+                  data={heatmapData}
+                  loading={isLoading || reservaLoading}
+                  height={310}
+                />
               </Section>
             </Grid>
           </Grid>
@@ -367,6 +378,50 @@ export default function OverviewPage() {
                   }
                   valueLabel={analystaMode === 'count' ? 'processo' : 'dia'}
                 />
+              </Section>
+            </Grid>
+            <Grid item xs={12} md={5}>
+              <Section
+                title={
+                  unitMode === 'count'
+                    ? strings.overview.processosPorUnidade
+                    : 'Tempo Médio por Unidade'
+                }
+                accentColor="#7b1fa2"
+                headerRight={
+                  <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={unitMode}
+                    onChange={(_, v) => v && setUnitMode(v as 'count' | 'leadtime')}
+                    sx={{
+                      '& .MuiToggleButton-root': {
+                        py: 0.25,
+                        px: 1,
+                        fontSize: '0.68rem',
+                        textTransform: 'none',
+                        lineHeight: 1.4,
+                        fontWeight: 500,
+                      },
+                    }}
+                  >
+                    <ToggleButton value="count">Processos</ToggleButton>
+                    <ToggleButton value="leadtime">Lead Time</ToggleButton>
+                  </ToggleButtonGroup>
+                }
+              >
+                {isLoading ? (
+                  <Skeleton variant="rectangular" height={310} sx={{ borderRadius: 2 }} />
+                ) : (
+                  <DistributionChart
+                    title=""
+                    data={unitMode === 'count' ? metrics.porUnidade : metrics.leadTimeByUnidade}
+                    height={310}
+                    maxItems={12}
+                    valueLabel={unitMode === 'count' ? 'Processos' : 'Média (dias)'}
+                    onBarClick={(label) => setUnitDrawer(label)}
+                  />
+                )}
               </Section>
             </Grid>
           </Grid>
