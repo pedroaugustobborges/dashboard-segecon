@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Box, Grid, Card, CardContent, Typography, Skeleton, useTheme, alpha, ToggleButtonGroup, ToggleButton } from '@mui/material'
 import HubIcon         from '@mui/icons-material/Hub'
 import BlockIcon        from '@mui/icons-material/Block'
@@ -9,11 +9,13 @@ import { KpiCard }           from '../../components/charts/KpiCard'
 import { DistributionChart } from '../../components/charts/DistributionChart'
 import { LeadTimeChart }     from '../../components/charts/LeadTimeChart'
 import { PriorityPieChart }  from '../../components/charts/PriorityPieChart'
-import { ProcessDrawer }     from '../../components/layout/ProcessDrawer'
-import { useProcessos }      from '../../hooks/useProcessoContrato'
-import { useLeadTime }       from '../../hooks/useLeadTime'
-import { useGlobalFilters }  from '../../hooks/useGlobalFilters'
-import { useOverviewData }   from './useOverviewData'
+import { ProcessDrawer }          from '../../components/layout/ProcessDrawer'
+import { PictogramChart }         from '../../components/charts/PictogramChart'
+import { useProcessos }           from '../../hooks/useProcessoContrato'
+import { useLeadTime }            from '../../hooks/useLeadTime'
+import { useGlobalFilters }       from '../../hooks/useGlobalFilters'
+import { useFase1AnaliseReserva } from '../../hooks/useFase1AnaliseReserva'
+import { useOverviewData }        from './useOverviewData'
 import { prioridadeColors }  from '../../theme/theme'
 import { strings }           from '../../i18n/strings.pt-BR'
 
@@ -70,14 +72,58 @@ export default function OverviewPage() {
   const [filters] = useGlobalFilters()
   const [unitMode, setUnitMode] = useState<'count' | 'leadtime'>('count')
   const [deptMode, setDeptMode] = useState<'count' | 'leadtime'>('count')
-  const [unitDrawer, setUnitDrawer]   = useState<string | null>(null)
-  const [phaseDrawer, setPhaseDrawer] = useState<string | null>(null)
-  const [kpiDrawer, setKpiDrawer]     = useState<'ativos' | 'cancelados' | 'concluidos' | 'valor' | null>(null)
+  const [unitDrawer, setUnitDrawer]       = useState<string | null>(null)
+  const [phaseDrawer, setPhaseDrawer]     = useState<string | null>(null)
+  const [analystaDrawer, setAnalystaDrawer] = useState<string | null>(null)
+  const [kpiDrawer, setKpiDrawer]         = useState<'ativos' | 'cancelados' | 'concluidos' | 'valor' | null>(null)
 
   const { data: processos = [], isLoading, isError } = useProcessos({
     ...filters,
     incluirCancelados: true,
   })
+
+  const scIds = useMemo(
+    () => processos.map((p) => p.id_controle_sc).filter((id): id is number => id !== null),
+    [processos],
+  )
+
+  const { data: reservaRecords = [], isLoading: reservaLoading } = useFase1AnaliseReserva(scIds)
+
+  const pictogramData = useMemo(() => {
+    const counts: Record<string, number> = {}
+    const seen = new Set<string>()
+    for (const rec of reservaRecords) {
+      const nome = rec.nome?.trim() || 'N/A'
+      const key  = `${nome}|||${rec.id_controle_sc ?? ''}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      counts[nome] = (counts[nome] ?? 0) + 1
+    }
+    return Object.entries(counts)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
+  }, [reservaRecords])
+
+  const processosByAnalista = useMemo(() => {
+    const processoMap = new Map(
+      processos
+        .filter((p) => p.id_controle_sc !== null)
+        .map((p) => [p.id_controle_sc!, p]),
+    )
+    const result = new Map<string, typeof processos>()
+    const seen   = new Map<string, Set<number>>()
+    for (const rec of reservaRecords) {
+      const nome = rec.nome?.trim() || 'N/A'
+      const p    = rec.id_controle_sc != null ? processoMap.get(rec.id_controle_sc) : undefined
+      if (!p || p.id_controle_sc == null) continue
+      if (!seen.has(nome)) seen.set(nome, new Set())
+      if (seen.get(nome)!.has(p.id_controle_sc)) continue
+      seen.get(nome)!.add(p.id_controle_sc)
+      if (!result.has(nome)) result.set(nome, [])
+      result.get(nome)!.push(p)
+    }
+    return result
+  }, [reservaRecords, processos])
 
   const metrics     = useOverviewData(processos)
   const leadTimeData = useLeadTime(processos.filter((p) => !p.solicitacao_cancelada))
@@ -191,6 +237,22 @@ export default function OverviewPage() {
           </Grid>
         </Grid>
 
+        {/* ── Row 3b: Pictogram — analysts by process volume ───────────────── */}
+        <Grid container spacing={2} mb={2}>
+          <Grid item xs={12}>
+            <Section title="Analistas — Volume de Processos (Reserva)" accentColor="#0288d1">
+              <PictogramChart
+                data={pictogramData}
+                loading={isLoading || reservaLoading}
+                accentColor="#0288d1"
+                pageSize={5}
+                maxIcons={12}
+                onEntryClick={(label) => setAnalystaDrawer(label)}
+              />
+            </Section>
+          </Grid>
+        </Grid>
+
         {/* ── Row 4: Status donuts ─────────────────────────────────────────── */}
         <Grid container spacing={2} mb={2}>
           <Grid item xs={12} md={6}>
@@ -260,6 +322,14 @@ export default function OverviewPage() {
     </Box>
 
     {/* ── Drill-down drawers ────────────────────────────────────────────────── */}
+    <ProcessDrawer
+      open={analystaDrawer !== null}
+      onClose={() => setAnalystaDrawer(null)}
+      title={analystaDrawer ?? ''}
+      subtitle="Analista — Reserva"
+      accentColor="#0288d1"
+      processes={analystaDrawer ? (processosByAnalista.get(analystaDrawer) ?? []) : []}
+    />
     <ProcessDrawer
       open={unitDrawer !== null}
       onClose={() => setUnitDrawer(null)}

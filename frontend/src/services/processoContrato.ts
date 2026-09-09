@@ -85,6 +85,36 @@ export async function fetchDistinctNomesFase1(): Promise<string[]> {
   return (unique as string[]).sort((a, b) => a.localeCompare(b, 'pt-BR'))
 }
 
+export interface ReservaRecord {
+  id: number
+  id_controle_sc: number | null
+  nome: string | null
+}
+
+export async function fetchFase1AnaliseReservaByScIds(
+  idControleScList: number[],
+): Promise<ReservaRecord[]> {
+  const BATCH = 500
+  const results: ReservaRecord[] = []
+  for (let i = 0; i < idControleScList.length; i += BATCH) {
+    const batch = idControleScList.slice(i, i + BATCH)
+    const { data, error } = await supabase
+      .from('fase1_analise_contrato_reserva')
+      .select('id, id_controle_sc, nome')
+      .in('id_controle_sc', batch)
+    if (error) throw error
+    results.push(...(data as ReservaRecord[]))
+  }
+  // Deduplicate by (id_controle_sc, nome)
+  const seen = new Set<string>()
+  return results.filter((r) => {
+    const key = `${r.id_controle_sc ?? ''}|||${r.nome ?? ''}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 export async function fetchFase1AnaliseByScIds(
   idControleScList: number[],
 ): Promise<Fase1AnaliseContrato[]> {
