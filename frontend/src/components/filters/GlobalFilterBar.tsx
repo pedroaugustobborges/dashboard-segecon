@@ -13,6 +13,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs, { type Dayjs } from 'dayjs'
 import 'dayjs/locale/pt-br'
+import { TOPBAR_HEIGHT } from '../layout/AppShell'
 import { useGlobalFilters } from '../../hooks/useGlobalFilters'
 import { useDistinctEntidades } from '../../hooks/useProcessoContrato'
 import { useUserRole } from '../../hooks/useUserRole'
@@ -55,7 +56,7 @@ export function GlobalFilterBar() {
         elevation={0}
         sx={{
           position: 'sticky',
-          top: 64, // below the AppBar (TOPBAR_HEIGHT)
+          top: TOPBAR_HEIGHT,
           zIndex: theme.zIndex.appBar - 1,
           borderRadius: 0,
           borderBottom: `1px solid ${theme.palette.divider}`,

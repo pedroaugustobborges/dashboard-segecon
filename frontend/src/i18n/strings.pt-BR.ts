@@ -4,7 +4,7 @@
 
 export const strings = {
   app: {
-    name: 'SEGECON',
+    name: 'SiGCon',
     subtitle: 'Sistema de Gestão de Contratos',
   },
   nav: {
