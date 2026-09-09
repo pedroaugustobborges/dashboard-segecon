@@ -2,13 +2,15 @@
 // Handles data fetching, metrics computation, and standard layout.
 // Phase-specific sections are injected via `extraIndicators` and `gapIndicators` props.
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   Box, Grid, Card, CardContent, Typography, ToggleButtonGroup, ToggleButton,
   Drawer, Table, TableHead, TableBody, TableRow, TableCell, TableContainer,
   Chip, IconButton, Divider, useTheme, alpha,
 } from '@mui/material'
-import CloseIcon from '@mui/icons-material/Close'
+import CloseIcon        from '@mui/icons-material/Close'
+import ChevronLeftIcon  from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { GlobalFilterBar }     from '../filters/GlobalFilterBar'
 import { KpiCard }             from '../charts/KpiCard'
 import { DistributionChart }   from '../charts/DistributionChart'
@@ -104,6 +106,10 @@ export function PhaseView({
   const phaseColor = phaseColors[phaseKey] ?? '#00897b'
   const [respMode, setRespMode] = useState<'count' | 'leadtime'>('count')
   const [selectedResponsavel, setSelectedResponsavel] = useState<string | null>(null)
+  const [drawerPage, setDrawerPage] = useState(0)
+
+  // Reset drawer page whenever a different responsável is selected
+  useEffect(() => { setDrawerPage(0) }, [selectedResponsavel])
 
   // Fetch all processos (include cancelled — metrics handle exclusion)
   const { data: processos = [], isLoading } = useProcessos({ ...filters, incluirCancelados: true })
@@ -403,6 +409,9 @@ export function PhaseView({
           }),
           ...inProgress,
         ]
+        const DRAWER_PAGE_SIZE  = 50
+        const totalDrawerPages  = Math.max(1, Math.ceil(sortedRows.length / DRAWER_PAGE_SIZE))
+        const paginatedRows     = sortedRows.slice(drawerPage * DRAWER_PAGE_SIZE, (drawerPage + 1) * DRAWER_PAGE_SIZE)
 
         return (
           <Drawer
@@ -507,7 +516,7 @@ export function PhaseView({
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortedRows.map((p, idx) => {
+                    {paginatedRows.map((p, idx) => {
                       const isCompleted = !!p.fase1_data_fim_sc
                       const days = isCompleted
                         ? computeLeadTimeDays(p.fase1_data_inicio_sc, p.fase1_data_fim_sc)
@@ -583,6 +592,60 @@ export function PhaseView({
               </TableContainer>
 
               <Divider sx={{ my: 2 }} />
+
+              {/* Pagination controls */}
+              {totalDrawerPages > 1 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 2 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => setDrawerPage((p) => Math.max(0, p - 1))}
+                    disabled={drawerPage === 0}
+                    sx={{
+                      border: `1px solid ${isDark ? alpha('#fff', 0.12) : alpha('#000', 0.12)}`,
+                      borderRadius: '8px',
+                      '&:not(:disabled):hover': { borderColor: alpha(phaseColor, 0.4), color: phaseColor },
+                    }}
+                  >
+                    <ChevronLeftIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    {Array.from({ length: totalDrawerPages }, (_, i) => (
+                      <Box
+                        key={i}
+                        onClick={() => setDrawerPage(i)}
+                        sx={{
+                          width: i === drawerPage ? 18 : 6,
+                          height: 6,
+                          borderRadius: 3,
+                          bgcolor: i === drawerPage ? phaseColor : isDark ? alpha('#fff', 0.2) : alpha('#000', 0.15),
+                          cursor: 'pointer',
+                          transition: 'width 0.2s ease, background-color 0.2s ease',
+                          '&:hover': { bgcolor: i === drawerPage ? phaseColor : alpha(phaseColor, 0.5) },
+                        }}
+                      />
+                    ))}
+                  </Box>
+
+                  <IconButton
+                    size="small"
+                    onClick={() => setDrawerPage((p) => Math.min(totalDrawerPages - 1, p + 1))}
+                    disabled={drawerPage === totalDrawerPages - 1}
+                    sx={{
+                      border: `1px solid ${isDark ? alpha('#fff', 0.12) : alpha('#000', 0.12)}`,
+                      borderRadius: '8px',
+                      '&:not(:disabled):hover': { borderColor: alpha(phaseColor, 0.4), color: phaseColor },
+                    }}
+                  >
+                    <ChevronRightIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+
+                  <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled' }}>
+                    {drawerPage * DRAWER_PAGE_SIZE + 1}–{Math.min((drawerPage + 1) * DRAWER_PAGE_SIZE, sortedRows.length)} de {sortedRows.length}
+                  </Typography>
+                </Box>
+              )}
+
               <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', textAlign: 'center' }}>
                 Lead Time = dias entre Início e Fim da Fase 1. Processos em andamento não entram na média.
               </Typography>
