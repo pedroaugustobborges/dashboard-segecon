@@ -47,7 +47,16 @@ export async function fetchProcessos(
   query = applyFilters(query, filters)
   const { data, error } = await query
   if (error) throw error
-  return data as ProcessoContrato[]
+
+  // Deduplicate by id_controle_sc (the source-system business key).
+  // The ETL can insert multiple rows for the same process; we keep only the first.
+  const seen = new Set<number>()
+  return (data as ProcessoContrato[]).filter((p) => {
+    if (p.id_controle_sc === null) return true
+    if (seen.has(p.id_controle_sc)) return false
+    seen.add(p.id_controle_sc)
+    return true
+  })
 }
 
 export async function fetchDistinctEntidades(): Promise<string[]> {
@@ -90,5 +99,13 @@ export async function fetchFase1AnaliseByScIds(
     if (error) throw error
     results.push(...(data as Fase1AnaliseContrato[]))
   }
-  return results
+
+  // Deduplicate by (id_controle_sc, nome) — one record per (process, responsável) pair.
+  const seen = new Set<string>()
+  return results.filter((r) => {
+    const key = `${r.id_controle_sc ?? ''}|||${r.nome ?? ''}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }

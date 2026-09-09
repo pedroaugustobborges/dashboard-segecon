@@ -66,6 +66,7 @@ interface DistributionChartProps {
   pageSize?: number
   height?: number
   valueLabel?: string
+  onBarClick?: (label: string) => void
   segmentKey?: string
   segments?: string[]
   onSegmentChange?: (seg: string) => void
@@ -78,7 +79,8 @@ const DEFAULT_COLORS = [
 
 export function DistributionChart({
   title, data, loading, horizontal = true, colorMap, maxItems = 12,
-  pageSize, height = 300, valueLabel = 'Processos', segmentKey, segments, onSegmentChange,
+  pageSize, height = 300, valueLabel = 'Processos', onBarClick,
+  segmentKey, segments, onSegmentChange,
 }: DistributionChartProps) {
   const theme   = useTheme()
   const isDark  = theme.palette.mode === 'dark'
@@ -180,7 +182,11 @@ export function DistributionChart({
               content={tooltipRenderer}
               cursor={{ fill: isDark ? alpha('#ffffff', 0.04) : alpha('#000000', 0.04) }}
             />
-            <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22}>
+            <Bar
+              dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={22}
+              onClick={onBarClick ? (d: ChartEntry) => onBarClick(d.name) : undefined}
+              style={{ cursor: onBarClick ? 'pointer' : undefined }}
+            >
               {chartData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
@@ -195,7 +201,11 @@ export function DistributionChart({
               content={tooltipRenderer}
               cursor={{ fill: isDark ? alpha('#ffffff', 0.04) : alpha('#000000', 0.04) }}
             />
-            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40}>
+            <Bar
+              dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40}
+              onClick={onBarClick ? (d: ChartEntry) => onBarClick(d.name) : undefined}
+              style={{ cursor: onBarClick ? 'pointer' : undefined }}
+            >
               {chartData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
