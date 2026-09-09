@@ -4,7 +4,23 @@
 import { supabase } from './supabaseClient'
 import type { AppUser, UserRole } from '../types/auth.types'
 
-// ── Session & profile ───────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+// Resolves a stored photo value to a displayable URL.
+// The DB stores the storage PATH (e.g. "uuid/avatar.jpg") — not a full URL.
+// Legacy rows that already contain a full URL pass through unchanged.
+// Signed URLs expire after 7 days — sufficient for an internal app.
+async function resolvePhotoUrl(photoValue: string | null): Promise<string | null> {
+  if (!photoValue) return null
+  // Already a full URL (legacy entry) — use as-is
+  if (photoValue.startsWith('http')) return photoValue
+  const { data } = await supabase.storage
+    .from('user-photos')
+    .createSignedUrl(photoValue, 7 * 24 * 3600)   // 7-day signed URL
+  return data?.signedUrl ?? null
+}
+
+// ── Session & profile ────────────────────────────────────────────────────────
 
 export async function getSession() {
   const { data } = await supabase.auth.getSession()
@@ -29,11 +45,11 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     nome: profile.nome,
     role: profile.role as UserRole,
     entidades: profile.entidades ?? [],
-    photo_url: profile.photo_url,
+    photo_url: await resolvePhotoUrl(profile.photo_url),
   }
 }
 
-// ── Login / Logout ──────────────────────────────────────────
+// ── Login / Logout ───────────────────────────────────────────────────────────
 
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -46,7 +62,7 @@ export async function signOut() {
   if (error) throw error
 }
 
-// ── User management (Admin only) ────────────────────────────
+// ── User management (Admin only) ─────────────────────────────────────────────
 
 export interface CreateUserPayload {
   email: string
@@ -87,14 +103,16 @@ export async function resetUserPassword(email: string) {
   if (error) throw error
 }
 
+// Uploads the file and returns the storage PATH (not the full URL).
+// The path is stored in profiles.photo_url; resolved to a signed URL on read.
 export async function uploadUserPhoto(userId: string, file: File): Promise<string> {
-  const ext = file.name.split('.').pop()
+  const ext  = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
   const path = `${userId}/avatar.${ext}`
-  const { error } = await supabase.storage.from('user-photos').upload(path, file, { upsert: true })
+  const { error } = await supabase.storage
+    .from('user-photos')
+    .upload(path, file, { upsert: true, contentType: file.type })
   if (error) throw error
-
-  const { data } = supabase.storage.from('user-photos').getPublicUrl(path)
-  return data.publicUrl
+  return path   // store path, not URL — resolvePhotoUrl handles the rest
 }
 
 export async function listAllUsers(): Promise<AppUser[]> {
@@ -104,14 +122,17 @@ export async function listAllUsers(): Promise<AppUser[]> {
     .order('nome')
   if (error) throw error
 
-  // Get emails from auth.users — only accessible with service role;
-  // for now return without emails (admin page can show nome + role)
-  return (data ?? []).map((p: Record<string, unknown>) => ({
-    id: p.id as string,
-    email: '',
-    nome: p.nome as string,
-    role: p.role as UserRole,
-    entidades: (p.entidades as string[]) ?? [],
-    photo_url: (p.photo_url as string) ?? null,
-  }))
+  // Resolve each stored path to a signed URL in parallel
+  const users = await Promise.all(
+    (data ?? []).map(async (p: Record<string, unknown>) => ({
+      id:        p.id        as string,
+      email:     '',
+      nome:      p.nome      as string,
+      role:      p.role      as UserRole,
+      entidades: (p.entidades as string[]) ?? [],
+      photo_url: await resolvePhotoUrl((p.photo_url as string) ?? null),
+    })),
+  )
+
+  return users
 }

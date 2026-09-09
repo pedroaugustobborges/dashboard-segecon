@@ -6,9 +6,14 @@ import type { AppUser } from '../../types/auth.types'
 interface AuthContextValue {
   user: AppUser | null
   loading: boolean
+  refreshUser: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextValue>({ user: null, loading: true })
+const AuthContext = createContext<AuthContextValue>({
+  user: null,
+  loading: true,
+  refreshUser: async () => {},
+})
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = useAuth()

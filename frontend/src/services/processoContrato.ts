@@ -59,6 +59,23 @@ export async function fetchDistinctEntidades(): Promise<string[]> {
   return (unique as string[]).sort()
 }
 
+// Distinct analyst names from the reserva table — used to pre-populate
+// the "Nome" field when creating new users in Gestão de Usuários.
+export async function fetchDistinctNomesFase1(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('fase1_analise_contrato_reserva')
+    .select('nome')
+  if (error) throw error
+  const unique = [
+    ...new Set(
+      (data ?? [])
+        .map((r: { nome: string | null }) => r.nome)
+        .filter((n): n is string => !!n && n.trim().length > 0),
+    ),
+  ]
+  return (unique as string[]).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+}
+
 export async function fetchFase1AnaliseByScIds(
   idControleScList: number[],
 ): Promise<Fase1AnaliseContrato[]> {

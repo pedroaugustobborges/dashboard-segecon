@@ -187,3 +187,40 @@ CREATE POLICY "Authenticated users can read contrato_catalogo"
     FOR SELECT
     TO authenticated
     USING (true);
+
+
+-- ------------------------------------------------------------
+-- TABLE: fase1_analise_contrato_reserva
+-- Source: ressuprimentos.ecompras_processo_contrato_fase1_analise_contrato_reserva (11 cols)
+-- Tracks who has a process reserved/assigned during Fase 1 analysis.
+-- The "nome" column is the source of truth for analyst names.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS fase1_analise_contrato_reserva (
+    id                      INTEGER         PRIMARY KEY,
+
+    -- Vínculos
+    id_controle_sc          INTEGER,
+    id_controle_catalogo    INTEGER,
+    id_controle_contrato    INTEGER,
+
+    -- Identificação
+    entidade                TEXT,
+    nome                    TEXT,           -- analyst name (used for user suggestions)
+
+    -- Período da reserva
+    data_inicio             TIMESTAMPTZ,
+    data_fim                TIMESTAMPTZ,
+
+    -- Auditoria
+    criado_em               TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    atualizado_em           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    empresa_id              INTEGER
+);
+
+ALTER TABLE fase1_analise_contrato_reserva ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read fase1_analise_contrato_reserva"
+    ON fase1_analise_contrato_reserva
+    FOR SELECT
+    TO authenticated
+    USING (true);

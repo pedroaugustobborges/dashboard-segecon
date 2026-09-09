@@ -1,11 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../services/supabaseClient'
 import { getCurrentUser } from '../services/authService'
 import type { AppUser } from '../types/auth.types'
 
 export function useAuth() {
-  const [user, setUser] = useState<AppUser | null>(null)
+  const [user, setUser]       = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const refreshUser = useCallback(async () => {
+    const u = await getCurrentUser()
+    setUser(u)
+  }, [])
 
   useEffect(() => {
     getCurrentUser().then((u) => { setUser(u); setLoading(false) })
@@ -17,5 +22,5 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
-  return { user, loading }
+  return { user, loading, refreshUser }
 }

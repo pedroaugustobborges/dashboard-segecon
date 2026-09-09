@@ -61,6 +61,10 @@ TABELAS = {
         "destino":      "fase1_analise_contrato",
         "coluna_data":  "data_log",
     },
+    "ressuprimentos.ecompras_processo_contrato_fase1_analise_contrato_reserva": {
+        "destino":      "fase1_analise_contrato_reserva",
+        "coluna_data":  "data_inicio",
+    },
     "ressuprimentos.ecompras_contrato_catalogo": {
         "destino":      "contrato_catalogo",
         "coluna_data":  "data_inicio",

@@ -20,9 +20,10 @@ import {
   resetUserPassword, uploadUserPhoto,
   type CreateUserPayload,
 } from '../../services/authService'
-import { fetchDistinctEntidades } from '../../services/processoContrato'
-import { useUserRole }  from '../../hooks/useUserRole'
-import { strings }      from '../../i18n/strings.pt-BR'
+import { fetchDistinctEntidades, fetchDistinctNomesFase1 } from '../../services/processoContrato'
+import { useUserRole }    from '../../hooks/useUserRole'
+import { useAuthContext } from '../auth/AuthContext'
+import { strings }        from '../../i18n/strings.pt-BR'
 import type { AppUser, UserRole } from '../../types/auth.types'
 
 // ── Form state ────────────────────────────────────────────────────────────────
@@ -126,6 +127,7 @@ export default function GestaoUsuario() {
   const drawerBg     = isDark ? '#111318' : '#ffffff'
 
   const { isAdmin, loading: roleLoading } = useUserRole()
+  const { user: currentUser, refreshUser } = useAuthContext()
   const qc = useQueryClient()
 
   const [drawerOpen,  setDrawerOpen]  = useState(false)
@@ -148,6 +150,13 @@ export default function GestaoUsuario() {
     queryKey: ['distinct-entidades'],
     queryFn: fetchDistinctEntidades,
     enabled: isAdmin,
+  })
+
+  const { data: nomeOptions = [] } = useQuery({
+    queryKey: ['distinct-nomes-fase1'],
+    queryFn: fetchDistinctNomesFase1,
+    enabled: isAdmin,
+    staleTime: 5 * 60 * 1000, // names change rarely — cache 5 min
   })
 
   // ── Mutations ─────────────────────────────────────────────────────────────
@@ -182,6 +191,8 @@ export default function GestaoUsuario() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] })
+      // If the admin edited their own profile, refresh the topbar avatar too
+      if (editTarget?.id === currentUser?.id) refreshUser()
       setDrawerOpen(false)
       setSnack(strings.gestaoUsuario.usuarioAtualizado)
     },
@@ -619,14 +630,53 @@ export default function GestaoUsuario() {
             {/* Informações básicas */}
             <DrawerSection label="Informações Básicas" />
 
-            <TextField
-              label={strings.gestaoUsuario.nome}
+            <Autocomplete
+              freeSolo
+              options={nomeOptions}
               value={form.nome}
-              onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
-              required
-              fullWidth
-              size="small"
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+              onInputChange={(_, value) => setForm((f) => ({ ...f, nome: value }))}
+              onChange={(_, value) => setForm((f) => ({ ...f, nome: value ?? '' }))}
+              filterOptions={(opts, { inputValue }) => {
+                const q = inputValue.toLowerCase()
+                return q.length < 2
+                  ? opts.slice(0, 8)   // show 8 suggestions before typing
+                  : opts.filter((o) => o.toLowerCase().includes(q)).slice(0, 12)
+              }}
+              renderOption={(props, option) => {
+                const { key, ...rest } = props as React.HTMLAttributes<HTMLLIElement> & { key?: React.Key }
+                return (
+                  <Box
+                    component="li"
+                    key={key}
+                    {...rest}
+                    sx={{ fontSize: '0.82rem', py: '6px !important' }}
+                  >
+                    <Box
+                      sx={{
+                        width: 6, height: 6, borderRadius: '50%',
+                        bgcolor: primary, flexShrink: 0, mr: 1.25, mt: '1px',
+                        boxShadow: isDark ? `0 0 6px ${alpha(primary, 0.7)}` : 'none',
+                      }}
+                    />
+                    {option}
+                  </Box>
+                )
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={strings.gestaoUsuario.nome}
+                  required
+                  size="small"
+                  placeholder="Nome completo ou selecione da lista…"
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                  helperText={
+                    nomeOptions.length > 0
+                      ? `${nomeOptions.length} analistas disponíveis na lista`
+                      : undefined
+                  }
+                />
+              )}
             />
 
             {!editTarget && (
