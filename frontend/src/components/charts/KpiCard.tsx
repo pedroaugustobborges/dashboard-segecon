@@ -17,10 +17,11 @@ interface KpiCardProps {
   loading?: boolean
   icon?: React.ReactNode
   formatValue?: (v: number | string) => string
+  onClick?: () => void
 }
 
 export function KpiCard({
-  label, value, unit, delta, deltaLabel, color, tooltip, loading, icon, formatValue,
+  label, value, unit, delta, deltaLabel, color, tooltip, loading, icon, formatValue, onClick,
 }: KpiCardProps) {
   const theme  = useTheme()
   const isDark = theme.palette.mode === 'dark'
@@ -41,13 +42,14 @@ export function KpiCard({
 
   return (
     <Card
+      onClick={onClick}
       sx={{
         height: '100%',
         minHeight: 140,
         position: 'relative',
         overflow: 'hidden',
         transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-        cursor: 'default',
+        cursor: onClick ? 'pointer' : 'default',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: isDark
@@ -145,6 +147,24 @@ export function KpiCard({
             </Typography>
           )}
         </Box>
+
+        {/* Clickable hint */}
+        {onClick && (
+          <Typography
+            sx={{
+              mt: 1.25,
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              letterSpacing: '0.03em',
+              color: accent,
+              opacity: 0.65,
+              transition: 'opacity 0.15s',
+              '.MuiCard-root:hover &': { opacity: 1 },
+            }}
+          >
+            Ver processos →
+          </Typography>
+        )}
 
         {/* Delta badge */}
         {delta !== undefined && (

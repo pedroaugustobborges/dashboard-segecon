@@ -33,6 +33,10 @@ export function useOverviewData(processos: ProcessoContrato[]) {
     let totalConcluidos = 0
     let valorTotal = 0
 
+    const processosAtivos: ProcessoContrato[] = []
+    const processosCancelados: ProcessoContrato[] = []
+    const processosConcluidos: ProcessoContrato[] = []
+
     const phaseCount: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 }
     const analiseContratoStatus: Record<string, number> = {}
     const aprovacaoStatus: Record<string, number> = {}
@@ -40,6 +44,7 @@ export function useOverviewData(processos: ProcessoContrato[]) {
     for (const p of processos) {
       if (p.solicitacao_cancelada) {
         totalCancelados++
+        processosCancelados.push(p)
         continue
       }
 
@@ -49,8 +54,10 @@ export function useOverviewData(processos: ProcessoContrato[]) {
 
       if (status === 'completed') {
         totalConcluidos++
+        processosConcluidos.push(p)
       } else if (currentPhase !== null) {
         totalAtivos++
+        processosAtivos.push(p)
         phaseCount[currentPhase] = (phaseCount[currentPhase] ?? 0) + 1
       }
 
@@ -168,12 +175,22 @@ export function useOverviewData(processos: ProcessoContrato[]) {
       maximumFractionDigits: 1,
     }).format(valorTotal)
 
+    // All non-cancelled sorted by value desc (for "Valor Estimado" KPI drill-down)
+    const processosPorValor = processos
+      .filter((p) => !p.solicitacao_cancelada)
+      .slice()
+      .sort((a, b) => Number(b.solicitacao_valor_estimado ?? 0) - Number(a.solicitacao_valor_estimado ?? 0))
+
     return {
       totalAtivos,
       totalCancelados,
       totalConcluidos,
       valorTotal,
       valorFormatted,
+      processosAtivos,
+      processosCancelados,
+      processosConcluidos,
+      processosPorValor,
       phaseDistribution,
       porUnidade,
       leadTimeByUnidade,

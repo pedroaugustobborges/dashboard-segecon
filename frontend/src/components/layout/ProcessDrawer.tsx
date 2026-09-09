@@ -3,11 +3,14 @@
 // Used by: Visão Geral (por unidade, por fase), and can replace PhaseView's
 // inline drawer in the future.
 
+import { useState, useEffect } from 'react'
 import {
   Box, Typography, Drawer, Table, TableHead, TableBody, TableRow,
   TableCell, TableContainer, Chip, IconButton, Divider, useTheme, alpha,
 } from '@mui/material'
-import CloseIcon from '@mui/icons-material/Close'
+import CloseIcon        from '@mui/icons-material/Close'
+import ChevronLeftIcon  from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { derivePhaseInfo } from '../../hooks/useDerivedStatus'
 import { phaseColors, prioridadeColors } from '../../theme/theme'
 import { totalLeadTimeDays, PHASE_LABELS, fmtDate } from '../../utils/processoUtils'
@@ -35,6 +38,32 @@ function ltColor(days: number): string {
   if (days <= 60) return '#f59e0b'
   return '#ef4444'
 }
+
+/** Human-readable explanation of why a process is in its current status. */
+function deriveStatusReason(p: ProcessoContrato, status: string, currentPhase: FaseKey | null): string {
+  if (p.solicitacao_cancelada) {
+    if (p.fase1_status_aprovacao_solicitacao && p.fase1_status_aprovacao_solicitacao !== 'N/A')
+      return p.fase1_status_aprovacao_solicitacao
+    if (p.cotacao_status) return p.cotacao_status
+    if (p.fornecedor_situacao_motivo) return p.fornecedor_situacao_motivo
+    return 'Solicitação cancelada'
+  }
+  if (status === 'completed') {
+    const date = p.fase8_data_fim_publicacao_contrato
+    return date ? `Publicado em ${fmtDate(date)}` : 'Contrato publicado'
+  }
+  if (currentPhase !== null) {
+    const label = PHASE_LABELS[currentPhase as FaseKey]
+    if (currentPhase === 1) {
+      const sub = p.fase1_status_analise_contrato ?? p.fase1_status_aprovacao_solicitacao
+      return sub ? `${label} — ${sub}` : label
+    }
+    return label
+  }
+  return 'Aguardando início'
+}
+
+const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
 /** Sort: active processes first (by phase asc), completed last (by lead time desc). */
 function sortProcessos(processes: ProcessoContrato[]): ProcessoContrato[] {
@@ -71,7 +100,14 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
     ? Math.round(completedDays.reduce((s, v) => s + v, 0) / completedDays.length * 10) / 10
     : null
 
-  const sorted = sortProcessos(processes)
+  const sorted    = sortProcessos(processes)
+  const PAGE_SIZE = 50
+  const [page, setPage] = useState(0)
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const paginated  = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
+  // Reset to first page whenever the process list changes
+  useEffect(() => { setPage(0) }, [processes])
 
   const summaryChips = [
     { label: 'Total',      value: processes.length, color: accent },
@@ -80,7 +116,7 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
     ...(avgDays !== null ? [{ label: 'Média Lead Time', value: `${avgDays} d`, color: accent }] : []),
   ]
 
-  const TABLE_HEADERS = ['Processo', 'Entidade', 'Prioridade', 'Fase Atual', 'Início Fase 1', 'Lead Time']
+  const TABLE_HEADERS = ['Processo', 'Entidade', 'Prioridade', 'Fase Atual', 'Situação', 'Início Fase 1', 'Lead Time', 'Valor (R$)']
 
   return (
     <Drawer
@@ -89,7 +125,7 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
       onClose={onClose}
       PaperProps={{
         sx: {
-          width: { xs: '100%', sm: 720 },
+          width: { xs: '100%', sm: 900 },
           bgcolor: 'background.default',
           display: 'flex',
           flexDirection: 'column',
@@ -177,7 +213,7 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                   {TABLE_HEADERS.map((h, i) => (
                     <TableCell
                       key={h}
-                      align={i === TABLE_HEADERS.length - 1 ? 'right' : 'left'}
+                      align={i >= TABLE_HEADERS.length - 2 ? 'right' : 'left'}
                       sx={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}
                     >
                       {h}
@@ -186,11 +222,13 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sorted.map((p, idx) => {
+                {paginated.map((p, idx) => {
                   const { currentPhase, status } = derivePhaseInfo(p)
                   const lt = totalLeadTimeDays(p)
                   const isCompleted = status === 'completed'
                   const prioColor = prioridadeColors[p.solicitacao_tipo ?? ''] ?? alpha(isDark ? '#fff' : '#000', 0.3)
+                  const statusReason = deriveStatusReason(p, status, currentPhase)
+                  const valor = p.solicitacao_valor_estimado != null ? Number(p.solicitacao_valor_estimado) : null
 
                   return (
                     <TableRow
@@ -227,7 +265,7 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                       </TableCell>
 
                       {/* Fase Atual */}
-                      <TableCell>
+                      <TableCell sx={{ maxWidth: 160 }}>
                         {isCompleted ? (
                           <Chip
                             label="Concluído"
@@ -258,6 +296,16 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                         )}
                       </TableCell>
 
+                      {/* Situação / Motivo */}
+                      <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <Typography
+                          title={statusReason}
+                          sx={{ fontSize: '0.75rem', color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}
+                        >
+                          {statusReason}
+                        </Typography>
+                      </TableCell>
+
                       {/* Início Fase 1 */}
                       <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
                         {fmtDate(p.fase1_data_inicio_sc)}
@@ -281,6 +329,17 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                           />
                         )}
                       </TableCell>
+
+                      {/* Valor (R$) */}
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                        {valor != null ? (
+                          <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, color: 'text.primary' }}>
+                            {fmtBRL.format(valor)}
+                          </Typography>
+                        ) : (
+                          <Typography sx={{ fontSize: '0.78rem', color: 'text.disabled' }}>—</Typography>
+                        )}
+                      </TableCell>
                     </TableRow>
                   )
                 })}
@@ -290,6 +349,61 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
         )}
 
         <Divider sx={{ my: 2 }} />
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 2 }}>
+            <IconButton
+              size="small"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              sx={{
+                border: `1px solid ${isDark ? alpha('#fff', 0.12) : alpha('#000', 0.12)}`,
+                borderRadius: '8px',
+                '&:not(:disabled):hover': { borderColor: alpha(accent, 0.4), color: accent },
+              }}
+            >
+              <ChevronLeftIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+
+            {/* Page pills */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Box
+                  key={i}
+                  onClick={() => setPage(i)}
+                  sx={{
+                    width: i === page ? 18 : 6,
+                    height: 6,
+                    borderRadius: 3,
+                    bgcolor: i === page ? accent : isDark ? alpha('#fff', 0.2) : alpha('#000', 0.15),
+                    cursor: 'pointer',
+                    transition: 'width 0.2s ease, background-color 0.2s ease',
+                    '&:hover': { bgcolor: i === page ? accent : alpha(accent, 0.5) },
+                  }}
+                />
+              ))}
+            </Box>
+
+            <IconButton
+              size="small"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              sx={{
+                border: `1px solid ${isDark ? alpha('#fff', 0.12) : alpha('#000', 0.12)}`,
+                borderRadius: '8px',
+                '&:not(:disabled):hover': { borderColor: alpha(accent, 0.4), color: accent },
+              }}
+            >
+              <ChevronRightIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+
+            <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled' }}>
+              {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} de {sorted.length}
+            </Typography>
+          </Box>
+        )}
+
         <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', textAlign: 'center' }}>
           Lead Time Total = dias entre Início da Fase 1 e o fim da última fase concluída.
         </Typography>

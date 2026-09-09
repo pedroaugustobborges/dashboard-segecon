@@ -72,6 +72,7 @@ export default function OverviewPage() {
   const [deptMode, setDeptMode] = useState<'count' | 'leadtime'>('count')
   const [unitDrawer, setUnitDrawer]   = useState<string | null>(null)
   const [phaseDrawer, setPhaseDrawer] = useState<string | null>(null)
+  const [kpiDrawer, setKpiDrawer]     = useState<'ativos' | 'cancelados' | 'concluidos' | 'valor' | null>(null)
 
   const { data: processos = [], isLoading, isError } = useProcessos({
     ...filters,
@@ -82,10 +83,10 @@ export default function OverviewPage() {
   const leadTimeData = useLeadTime(processos.filter((p) => !p.solicitacao_cancelada))
 
   const kpiItems = [
-    { ...KPI_CONFIG[0], label: strings.overview.totalAtivos,       value: metrics.totalAtivos      },
-    { ...KPI_CONFIG[1], label: strings.overview.totalCancelados,    value: metrics.totalCancelados  },
-    { ...KPI_CONFIG[2], label: strings.overview.totalConcluidos,    value: metrics.totalConcluidos  },
-    { ...KPI_CONFIG[3], label: strings.overview.valorTotalEstimado, value: metrics.valorFormatted   },
+    { ...KPI_CONFIG[0], label: strings.overview.totalAtivos,       value: metrics.totalAtivos,    drawerKey: 'ativos'     as const },
+    { ...KPI_CONFIG[1], label: strings.overview.totalCancelados,    value: metrics.totalCancelados, drawerKey: 'cancelados' as const },
+    { ...KPI_CONFIG[2], label: strings.overview.totalConcluidos,    value: metrics.totalConcluidos, drawerKey: 'concluidos' as const },
+    { ...KPI_CONFIG[3], label: strings.overview.valorTotalEstimado, value: metrics.valorFormatted,  drawerKey: 'valor'      as const },
   ]
 
   return (
@@ -103,7 +104,7 @@ export default function OverviewPage() {
 
         {/* ── Row 1: KPI cards ─────────────────────────────────────────────── */}
         <Grid container spacing={2} mb={2}>
-          {kpiItems.map(({ key, label, value, color, icon }) => (
+          {kpiItems.map(({ key, label, value, color, icon, drawerKey }) => (
             <Grid item xs={12} sm={6} md={3} key={key}>
               <KpiCard
                 label={label}
@@ -111,6 +112,7 @@ export default function OverviewPage() {
                 color={color}
                 icon={icon}
                 loading={isLoading}
+                onClick={() => setKpiDrawer(drawerKey)}
               />
             </Grid>
           ))}
@@ -273,6 +275,32 @@ export default function OverviewPage() {
       subtitle="Distribuição por Fase Atual"
       accentColor="#0288d1"
       processes={phaseDrawer ? (metrics.processosByPhaseLabel.get(phaseDrawer) ?? []) : []}
+    />
+    <ProcessDrawer
+      open={kpiDrawer !== null}
+      onClose={() => setKpiDrawer(null)}
+      title={
+        kpiDrawer === 'ativos'     ? strings.overview.totalAtivos       :
+        kpiDrawer === 'cancelados' ? strings.overview.totalCancelados    :
+        kpiDrawer === 'concluidos' ? strings.overview.totalConcluidos    :
+        kpiDrawer === 'valor'      ? strings.overview.valorTotalEstimado :
+        ''
+      }
+      subtitle="Visão Geral"
+      accentColor={
+        kpiDrawer === 'ativos'     ? '#00897b' :
+        kpiDrawer === 'cancelados' ? '#f44336' :
+        kpiDrawer === 'concluidos' ? '#0288d1' :
+        kpiDrawer === 'valor'      ? '#7b1fa2' :
+        undefined
+      }
+      processes={
+        kpiDrawer === 'ativos'     ? metrics.processosAtivos     :
+        kpiDrawer === 'cancelados' ? metrics.processosCancelados  :
+        kpiDrawer === 'concluidos' ? metrics.processosConcluidos  :
+        kpiDrawer === 'valor'      ? metrics.processosPorValor    :
+        []
+      }
     />
     </>
   )
