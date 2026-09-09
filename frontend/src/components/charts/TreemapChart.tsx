@@ -28,7 +28,7 @@ function truncate(text: string, maxPx: number, fontSize = 9): string {
 
 function renderContent(props: any, isDark: boolean): React.ReactElement {
   const { x, y, width, height, depth, name, value, color } = props
-  if (!width || !height || width < 4 || height < 4) return null
+  if (!width || !height || width < 4 || height < 4) return <></>
 
   const c       = color ?? '#00897b'
   const textRgb = '255,255,255'
