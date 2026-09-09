@@ -1,47 +1,85 @@
-import { Typography, Tooltip, IconButton, Paper } from '@mui/material'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import { Box, Typography, Tooltip, IconButton, useTheme, alpha } from '@mui/material'
+import InfoOutlinedIcon  from '@mui/icons-material/InfoOutlined'
+import WarningAmberIcon  from '@mui/icons-material/WarningAmber'
 import { strings } from '../../i18n/strings.pt-BR'
 
 interface Props {
-  title: string          // pt-BR indicator title
-  missingSource: string  // e.g. "Tabela: processo_contrato_fase1_aprovacao_solicitacao"
-  details?: string       // optional longer explanation
+  title: string
+  missingSource: string
+  details?: string
 }
 
 export function UnavailableIndicator({ title, missingSource, details }: Props) {
+  const theme   = useTheme()
+  const isDark  = theme.palette.mode === 'dark'
+  const warning = theme.palette.warning.main   // #f57c00 / #ffa726
+
   return (
-    <Paper
-      variant="outlined"
+    <Box
       sx={{
         p: 3,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: 1,
-        borderStyle: 'dashed',
-        borderColor: 'warning.main',
-        bgcolor: 'warning.50',
-        color: 'text.secondary',
+        borderRadius: '14px',
+        border: `1px dashed ${alpha(warning, isDark ? 0.45 : 0.4)}`,
+        bgcolor: alpha(warning, isDark ? 0.07 : 0.05),
+        backdropFilter: isDark ? 'blur(8px)' : 'none',
       }}
     >
-      <WarningAmberIcon sx={{ color: 'warning.main', fontSize: 36 }} />
-      <Typography variant="subtitle2" fontWeight={600} textAlign="center">
+      <Box
+        sx={{
+          width: 48,
+          height: 48,
+          borderRadius: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: alpha(warning, isDark ? 0.18 : 0.12),
+          border: `1px solid ${alpha(warning, isDark ? 0.35 : 0.25)}`,
+          boxShadow: isDark ? `0 0 16px ${alpha(warning, 0.25)}` : 'none',
+          mb: 0.5,
+        }}
+      >
+        <WarningAmberIcon sx={{ color: warning, fontSize: 26 }} />
+      </Box>
+
+      <Typography
+        sx={{ fontSize: '0.875rem', fontWeight: 700, color: 'text.primary', textAlign: 'center' }}
+      >
         {title}
       </Typography>
-      <Typography variant="body2" textAlign="center">
+
+      <Typography
+        sx={{ fontSize: '0.8rem', color: 'text.secondary', textAlign: 'center' }}
+      >
         {strings.gaps.indicadorIndisponivel}
       </Typography>
-      <Typography variant="caption" textAlign="center" color="text.disabled">
+
+      <Typography
+        sx={{
+          fontSize: '0.72rem',
+          color: 'text.disabled',
+          textAlign: 'center',
+          fontFamily: 'monospace',
+          bgcolor: isDark ? alpha('#ffffff', 0.04) : alpha('#000', 0.04),
+          px: 1.25,
+          py: 0.5,
+          borderRadius: '6px',
+          border: `1px solid ${isDark ? alpha('#ffffff', 0.07) : alpha('#000', 0.07)}`,
+        }}
+      >
         {missingSource}
       </Typography>
+
       {details && (
         <Tooltip title={details} arrow>
-          <IconButton size="small">
-            <InfoOutlinedIcon fontSize="small" />
+          <IconButton size="small" sx={{ color: 'text.disabled', mt: 0.25 }}>
+            <InfoOutlinedIcon sx={{ fontSize: 16 }} />
           </IconButton>
         </Tooltip>
       )}
-    </Paper>
+    </Box>
   )
 }

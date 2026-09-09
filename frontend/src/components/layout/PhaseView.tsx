@@ -3,47 +3,79 @@
 // Phase-specific sections are injected via `extraIndicators` and `gapIndicators` props.
 
 import { useMemo } from 'react'
-import { Box, Grid, Card, CardContent, Typography } from '@mui/material'
-import { GlobalFilterBar } from '../filters/GlobalFilterBar'
-import { KpiCard } from '../charts/KpiCard'
-import { DistributionChart } from '../charts/DistributionChart'
-import { PriorityPieChart } from '../charts/PriorityPieChart'
-import { ProcessDetailTable } from '../tables/ProcessDetailTable'
-import { useProcessos } from '../../hooks/useProcessoContrato'
-import { useFase1Analise } from '../../hooks/useFase1AnaliseContrato'
-import { useGlobalFilters } from '../../hooks/useGlobalFilters'
-import { usePhaseMetrics } from '../../hooks/usePhaseMetrics'
+import { Box, Grid, Card, CardContent, Typography, useTheme, alpha } from '@mui/material'
+import { GlobalFilterBar }     from '../filters/GlobalFilterBar'
+import { KpiCard }             from '../charts/KpiCard'
+import { DistributionChart }   from '../charts/DistributionChart'
+import { PriorityPieChart }    from '../charts/PriorityPieChart'
+import { ProcessDetailTable }  from '../tables/ProcessDetailTable'
+import { useProcessos }        from '../../hooks/useProcessoContrato'
+import { useFase1Analise }     from '../../hooks/useFase1AnaliseContrato'
+import { useGlobalFilters }    from '../../hooks/useGlobalFilters'
+import { usePhaseMetrics }     from '../../hooks/usePhaseMetrics'
 import { useProcessoTableRows } from '../../features/processos/useProcessoTableRows'
-import { solicitacaoColumns } from '../../features/processos/solicitacaoColumns'
+import { solicitacaoColumns }   from '../../features/processos/solicitacaoColumns'
 import { phaseColors, prioridadeColors } from '../../theme/theme'
-import { strings } from '../../i18n/strings.pt-BR'
-import type { FaseKey } from '../../types/processoContrato.types'
+import { strings }              from '../../i18n/strings.pt-BR'
+import type { FaseKey }         from '../../types/processoContrato.types'
 import type { Fase1AnaliseContrato } from '../../types/processoContrato.types'
-import type { ProcessoRow } from '../../features/processos/useProcessoTableRows'
-import type { ColumnDef } from '../tables/ProcessDetailTable'
+import type { ProcessoRow }     from '../../features/processos/useProcessoTableRows'
+import type { ColumnDef }       from '../tables/ProcessDetailTable'
 
 interface PhaseViewProps {
   phaseKey: FaseKey
   title: string
   subtitle?: string
-  // Optional: the DB column to use for status distribution donut
   statusColumn?: keyof import('../../types/processoContrato.types').ProcessoContrato
   statusColumnLabel?: string
-  // Whether to show the responsável distribution chart (only Fase 1 Análise)
   showResponsavelChart?: boolean
-  // Phase-specific extra JSX rendered after standard charts (before detail table)
   extraIndicators?: (fase1Records: Fase1AnaliseContrato[]) => React.ReactNode
-  // Gap indicators rendered in the gaps row
   gapIndicators?: React.ReactNode
-  // Override which processes appear in the detail table (default: currentlyInPhase)
   tableFilterKey?: 'currentlyInPhase' | 'enteredPhase'
 }
 
-function Section({ children, title }: { children: React.ReactNode; title?: string }) {
+// ── Section wrapper ───────────────────────────────────────────────────────────
+// Left accent bar + card — matches the Overview page Section style.
+function Section({
+  children,
+  title,
+  accentColor,
+}: {
+  children: React.ReactNode
+  title?: string
+  accentColor?: string
+}) {
+  const theme   = useTheme()
+  const isDark  = theme.palette.mode === 'dark'
+  const accent  = accentColor ?? theme.palette.primary.main
+
   return (
     <Card sx={{ height: '100%' }}>
-      <CardContent>
-        {title && <Typography variant="subtitle2" fontWeight={600} mb={2}>{title}</Typography>}
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        {title && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Box
+              sx={{
+                width: 3,
+                height: 16,
+                borderRadius: 2,
+                flexShrink: 0,
+                bgcolor: accent,
+                boxShadow: isDark ? `0 0 8px ${alpha(accent, 0.7)}` : 'none',
+              }}
+            />
+            <Typography
+              sx={{
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                color: 'text.primary',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {title}
+            </Typography>
+          </Box>
+        )}
         {children}
       </CardContent>
     </Card>
@@ -55,7 +87,9 @@ export function PhaseView({
   showResponsavelChart, extraIndicators, gapIndicators,
   tableFilterKey = 'currentlyInPhase',
 }: PhaseViewProps) {
-  const [filters] = useGlobalFilters()
+  const theme      = useTheme()
+  const isDark     = theme.palette.mode === 'dark'
+  const [filters]  = useGlobalFilters()
   const phaseColor = phaseColors[phaseKey] ?? '#00897b'
 
   // Fetch all processos (include cancelled — metrics handle exclusion)
@@ -79,7 +113,7 @@ export function PhaseView({
     return allRows.filter((r) => targetIds.has(r.id))
   }, [allRows, metrics, tableFilterKey])
 
-  // Responsável distribution (Fase 1 Análise only — from fase1_analise_contrato.nome)
+  // Responsável distribution (Fase 1 Análise only)
   const responsavelData = useMemo(() => {
     if (!showResponsavelChart) return []
     const counts: Record<string, number> = {}
@@ -95,15 +129,31 @@ export function PhaseView({
   return (
     <Box>
       <GlobalFilterBar />
+
       <Box sx={{ px: 1.5, py: 1.5 }}>
-        {/* Header */}
-        <Box sx={{ mb: 2, borderLeft: `4px solid ${phaseColor}`, pl: 1.5 }}>
-          <Typography variant="h5" fontWeight={700}>{title}</Typography>
-          {subtitle && <Typography variant="body2" color="text.secondary" mt={0.5}>{subtitle}</Typography>}
+
+        {/* ── Page header ───────────────────────────────────────────────────── */}
+        <Box
+          sx={{
+            mb: 2.5,
+            pl: 2,
+            borderLeft: `3px solid ${phaseColor}`,
+            borderRadius: '0 4px 4px 0',
+            boxShadow: isDark ? `inset 3px 0 0 ${alpha(phaseColor, 0.0)}` : 'none',
+          }}
+        >
+          <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
+            {title}
+          </Typography>
+          {subtitle && (
+            <Typography variant="body2" color="text.secondary" mt={0.5}>
+              {subtitle}
+            </Typography>
+          )}
         </Box>
 
-        {/* KPI row */}
-        <Grid container spacing={2} mb={3}>
+        {/* ── KPI row ───────────────────────────────────────────────────────── */}
+        <Grid container spacing={2} mb={2.5}>
           <Grid item xs={12} sm={6} md={3}>
             <KpiCard
               label={strings.faseIndicators.atualmenteNaFase}
@@ -143,10 +193,11 @@ export function PhaseView({
           </Grid>
         </Grid>
 
-        {/* Charts row: lead time by prioridade + status donut */}
-        <Grid container spacing={2} mb={3}>
-          <Grid item xs={12} md={statusColumn ? 8 : 12}>
-            <Section title={strings.faseIndicators.leadTimePorPrioridade}>
+        {/* ── Charts row: lead time + prioridade donut + optional status donut ── */}
+        <Grid container spacing={2} mb={2.5}>
+          {/* Lead time by prioridade — takes remaining space */}
+          <Grid item xs={12} md={statusColumn ? 6 : 8}>
+            <Section title={strings.faseIndicators.leadTimePorPrioridade} accentColor={phaseColor}>
               <DistributionChart
                 title=""
                 data={metrics.leadTimeByPrioridade}
@@ -157,9 +208,25 @@ export function PhaseView({
               />
             </Section>
           </Grid>
+
+          {/* Prioridade donut — always shown */}
+          <Grid item xs={12} md={statusColumn ? 3 : 4}>
+            <Section accentColor={phaseColor}>
+              <PriorityPieChart
+                title={strings.faseIndicators.distribuicaoPorPrioridade}
+                data={metrics.byPrioridade}
+                loading={loading}
+                colorMap={prioridadeColors}
+                height={220}
+                innerRadius={44}
+              />
+            </Section>
+          </Grid>
+
+          {/* Status donut — only when statusColumn provided */}
           {statusColumn && (
-            <Grid item xs={12} md={4}>
-              <Section>
+            <Grid item xs={12} md={3}>
+              <Section accentColor={phaseColor}>
                 <PriorityPieChart
                   title={statusColumnLabel ?? strings.faseIndicators.distribuicaoPorStatus}
                   data={metrics.byStatus}
@@ -172,11 +239,14 @@ export function PhaseView({
           )}
         </Grid>
 
-        {/* Responsável chart (Fase 1 Análise only) */}
+        {/* ── Responsável chart (Fase 1 Análise only) ───────────────────────── */}
         {showResponsavelChart && (
-          <Grid container spacing={2} mb={3}>
+          <Grid container spacing={2} mb={2.5}>
             <Grid item xs={12}>
-              <Section title={strings.faseIndicators.distribuicaoPorResponsavel}>
+              <Section
+                title={strings.faseIndicators.distribuicaoPorResponsavel}
+                accentColor={phaseColor}
+              >
                 <DistributionChart
                   title=""
                   data={responsavelData}
@@ -190,38 +260,22 @@ export function PhaseView({
           </Grid>
         )}
 
-        {/* Phase-specific extra sections (e.g. RevisionsChart) */}
+        {/* ── Phase-specific extra sections (e.g. RevisionsChart) ───────────── */}
         {extraIndicators && (
-          <Box mb={3}>
+          <Box mb={2.5}>
             {extraIndicators(fase1Records)}
           </Box>
         )}
 
-        {/* Gap indicators */}
+        {/* ── Gap indicators ────────────────────────────────────────────────── */}
         {gapIndicators && (
-          <Grid container spacing={2} mb={3}>
+          <Grid container spacing={2} mb={2.5}>
             <Grid item xs={12}>{gapIndicators}</Grid>
           </Grid>
         )}
 
-        {/* Prioridade distribution */}
-        <Grid container spacing={2} mb={3}>
-          <Grid item xs={12} md={5}>
-            <Section>
-              <PriorityPieChart
-                title={strings.faseIndicators.distribuicaoPorPrioridade}
-                data={metrics.byPrioridade}
-                loading={loading}
-                colorMap={prioridadeColors}
-                height={220}
-                innerRadius={44}
-              />
-            </Section>
-          </Grid>
-        </Grid>
-
-        {/* Detail table */}
-        <Section title={strings.faseIndicators.detalhamento}>
+        {/* ── Detail table ──────────────────────────────────────────────────── */}
+        <Section title={strings.faseIndicators.detalhamento} accentColor={phaseColor}>
           <ProcessDetailTable
             columns={solicitacaoColumns as unknown as ColumnDef<Record<string, unknown>>[]}
             rows={tableRows as unknown as Record<string, unknown>[]}
@@ -231,6 +285,7 @@ export function PhaseView({
             rowKey={(r) => (r as unknown as ProcessoRow).id}
           />
         </Section>
+
       </Box>
     </Box>
   )

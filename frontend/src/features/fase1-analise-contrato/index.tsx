@@ -10,7 +10,6 @@ export default function Fase1AnaliseContrato() {
     <PhaseView
       phaseKey={1}
       title={strings.nav.fase1AnaliseContrato}
-      subtitle={strings.phases.fase1Full}
       statusColumn="fase1_status_analise_contrato"
       statusColumnLabel="Status – Análise Contrato"
       showResponsavelChart

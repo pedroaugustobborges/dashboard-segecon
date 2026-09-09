@@ -6,7 +6,6 @@ export default function Fase3() {
     <PhaseView
       phaseKey={3}
       title={strings.nav.fase3}
-      subtitle={strings.phases.fase3Full}
       statusColumn="cotacao_status"
       statusColumnLabel="Status da Cotação"
     />

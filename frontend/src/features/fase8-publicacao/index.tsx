@@ -6,7 +6,6 @@ export default function Fase8() {
     <PhaseView
       phaseKey={8}
       title={strings.nav.fase8}
-      subtitle={strings.phases.fase8Full}
     />
   )
 }

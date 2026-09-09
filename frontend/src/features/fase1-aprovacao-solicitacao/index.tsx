@@ -8,7 +8,6 @@ export default function Fase1AprovacaoSolicitacao() {
     <PhaseView
       phaseKey={1}
       title={strings.nav.fase1AprovacaoSolicitacao}
-      subtitle={strings.phases.fase1Full}
       statusColumn="fase1_status_aprovacao_solicitacao"
       statusColumnLabel="Status – Aprovação da Solicitação"
       gapIndicators={

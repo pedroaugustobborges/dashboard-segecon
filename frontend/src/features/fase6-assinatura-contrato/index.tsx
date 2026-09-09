@@ -8,7 +8,6 @@ export default function Fase6() {
     <PhaseView
       phaseKey={6}
       title={strings.nav.fase6}
-      subtitle={strings.phases.fase6Full}
       gapIndicators={
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <UnavailableIndicator
