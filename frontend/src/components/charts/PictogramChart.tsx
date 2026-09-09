@@ -4,7 +4,7 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { Box, Typography, Skeleton, Tooltip, IconButton, useTheme, alpha } from '@mui/material'
-import PersonIcon       from '@mui/icons-material/Person'
+import MedicalInformationIcon from '@mui/icons-material/MedicalInformation'
 import ChevronLeftIcon  from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 
@@ -25,6 +25,10 @@ interface PictogramChartProps {
   maxIcons?: number
   /** Called when the user clicks an entry row */
   onEntryClick?: (label: string) => void
+  /** Icon component rendered as the pictogram unit (default: IconComponent) */
+  IconComponent?: React.ElementType
+  /** Unit label shown in the legend, e.g. "processo" or "dia" */
+  valueLabel?: string
 }
 
 const ICON_PX = 20   // icon font-size
@@ -38,6 +42,8 @@ export function PictogramChart({
   pageSize = 5,
   maxIcons = 12,
   onEntryClick,
+  IconComponent = MedicalInformationIcon,
+  valueLabel = 'processo',
 }: PictogramChartProps) {
   const theme  = useTheme()
   const isDark = theme.palette.mode === 'dark'
@@ -100,9 +106,9 @@ export function PictogramChart({
           border: `1px solid ${alpha(accent, 0.18)}`,
         }}
       >
-        <PersonIcon sx={{ fontSize: 13, color: accent }} />
+        <IconComponent sx={{ fontSize: 13, color: accent }} />
         <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 500 }}>
-          = {iconUnit} processo{iconUnit !== 1 ? 's' : ''}
+          = {iconUnit} {valueLabel}{iconUnit !== 1 && valueLabel === 'processo' ? 's' : ''}
         </Typography>
       </Box>
 
@@ -120,7 +126,7 @@ export function PictogramChart({
           return (
             <Tooltip
               key={entry.label}
-              title={`${entry.label}: ${entry.value} processo${entry.value !== 1 ? 's' : ''}`}
+              title={`${entry.label}: ${entry.value} ${valueLabel}${entry.value !== 1 && valueLabel === 'processo' ? 's' : ''}`}
               placement="top"
               arrow
             >
@@ -194,7 +200,7 @@ export function PictogramChart({
                   {/* Ghost track (full scale reference) */}
                   <Box sx={{ display: 'flex', gap: `${ICON_GAP}px`, position: 'absolute', left: 0 }}>
                     {Array.from({ length: trackIcons }, (_, i) => (
-                      <PersonIcon
+                      <IconComponent
                         key={i}
                         sx={{
                           fontSize: ICON_PX,
@@ -207,7 +213,7 @@ export function PictogramChart({
                   {/* Filled icons */}
                   <Box sx={{ display: 'flex', gap: `${ICON_GAP}px`, position: 'relative' }}>
                     {Array.from({ length: Math.min(iconCount, trackIcons) }, (_, i) => (
-                      <PersonIcon
+                      <IconComponent
                         key={i}
                         className="pict-icon"
                         sx={{

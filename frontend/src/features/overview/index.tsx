@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react'
 import { Box, Grid, Card, CardContent, Typography, Skeleton, useTheme, alpha, ToggleButtonGroup, ToggleButton } from '@mui/material'
-import HubIcon         from '@mui/icons-material/Hub'
-import BlockIcon        from '@mui/icons-material/Block'
-import TaskAltIcon      from '@mui/icons-material/TaskAlt'
-import PaidIcon         from '@mui/icons-material/Paid'
+import HubIcon                  from '@mui/icons-material/Hub'
+import BlockIcon                from '@mui/icons-material/Block'
+import TaskAltIcon              from '@mui/icons-material/TaskAlt'
+import PaidIcon                 from '@mui/icons-material/Paid'
+import MedicalInformationIcon   from '@mui/icons-material/MedicalInformation'
+import WorkHistoryIcon          from '@mui/icons-material/WorkHistory'
 import { GlobalFilterBar }   from '../../components/filters/GlobalFilterBar'
 import { KpiCard }           from '../../components/charts/KpiCard'
 import { DistributionChart } from '../../components/charts/DistributionChart'
@@ -16,6 +18,7 @@ import { useLeadTime }            from '../../hooks/useLeadTime'
 import { useGlobalFilters }       from '../../hooks/useGlobalFilters'
 import { useFase1AnaliseReserva } from '../../hooks/useFase1AnaliseReserva'
 import { useOverviewData }        from './useOverviewData'
+import { totalLeadTimeDays }      from '../../utils/processoUtils'
 import { prioridadeColors }  from '../../theme/theme'
 import { strings }           from '../../i18n/strings.pt-BR'
 
@@ -70,8 +73,9 @@ const KPI_CONFIG = [
 
 export default function OverviewPage() {
   const [filters] = useGlobalFilters()
-  const [unitMode, setUnitMode] = useState<'count' | 'leadtime'>('count')
-  const [deptMode, setDeptMode] = useState<'count' | 'leadtime'>('count')
+  const [unitMode, setUnitMode]         = useState<'count' | 'leadtime'>('count')
+  const [deptMode, setDeptMode]         = useState<'count' | 'leadtime'>('count')
+  const [analystaMode, setAnalystaMode] = useState<'count' | 'leadtime'>('count')
   const [unitDrawer, setUnitDrawer]       = useState<string | null>(null)
   const [phaseDrawer, setPhaseDrawer]     = useState<string | null>(null)
   const [analystaDrawer, setAnalystaDrawer] = useState<string | null>(null)
@@ -123,6 +127,34 @@ export default function OverviewPage() {
       result.get(nome)!.push(p)
     }
     return result
+  }, [reservaRecords, processos])
+
+  const leadTimeByAnalista = useMemo(() => {
+    const processoMap = new Map(
+      processos
+        .filter((p) => p.id_controle_sc !== null)
+        .map((p) => [p.id_controle_sc!, p]),
+    )
+    const ltByNome: Record<string, number[]> = {}
+    const seen = new Map<string, Set<number>>()
+    for (const rec of reservaRecords) {
+      const nome = rec.nome?.trim() || 'N/A'
+      const p    = rec.id_controle_sc != null ? processoMap.get(rec.id_controle_sc) : undefined
+      if (!p || p.id_controle_sc == null) continue
+      if (!seen.has(nome)) seen.set(nome, new Set())
+      if (seen.get(nome)!.has(p.id_controle_sc)) continue
+      seen.get(nome)!.add(p.id_controle_sc)
+      const days = totalLeadTimeDays(p)
+      if (days === null || days < 0) continue
+      if (!ltByNome[nome]) ltByNome[nome] = []
+      ltByNome[nome].push(days)
+    }
+    return Object.entries(ltByNome)
+      .map(([label, days]) => ({
+        label,
+        value: Math.round(days.reduce((s, v) => s + v, 0) / days.length * 10) / 10,
+      }))
+      .sort((a, b) => b.value - a.value)
   }, [reservaRecords, processos])
 
   const metrics     = useOverviewData(processos)
@@ -240,14 +272,36 @@ export default function OverviewPage() {
         {/* ── Row 3b: Pictogram — analysts by process volume ───────────────── */}
         <Grid container spacing={2} mb={2}>
           <Grid item xs={12}>
-            <Section title="Analistas — Volume de Processos (Reserva)" accentColor="#0288d1">
+            <Section
+              title={analystaMode === 'count' ? 'Analistas — Volume de Processos (Reserva)' : 'Analistas — Tempo Médio (Reserva)'}
+              accentColor="#0288d1"
+              headerRight={
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  value={analystaMode}
+                  onChange={(_, v) => v && setAnalystaMode(v as 'count' | 'leadtime')}
+                  sx={{
+                    '& .MuiToggleButton-root': {
+                      py: 0.25, px: 1, fontSize: '0.68rem', textTransform: 'none',
+                      lineHeight: 1.4, fontWeight: 500,
+                    },
+                  }}
+                >
+                  <ToggleButton value="count">Processos</ToggleButton>
+                  <ToggleButton value="leadtime">Lead Time</ToggleButton>
+                </ToggleButtonGroup>
+              }
+            >
               <PictogramChart
-                data={pictogramData}
+                data={analystaMode === 'count' ? pictogramData : leadTimeByAnalista}
                 loading={isLoading || reservaLoading}
                 accentColor="#0288d1"
                 pageSize={5}
                 maxIcons={12}
                 onEntryClick={(label) => setAnalystaDrawer(label)}
+                IconComponent={analystaMode === 'count' ? MedicalInformationIcon : WorkHistoryIcon}
+                valueLabel={analystaMode === 'count' ? 'processo' : 'dia'}
               />
             </Section>
           </Grid>
