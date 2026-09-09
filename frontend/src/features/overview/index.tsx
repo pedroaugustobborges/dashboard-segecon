@@ -68,6 +68,7 @@ const KPI_CONFIG = [
 export default function OverviewPage() {
   const [filters] = useGlobalFilters()
   const [unitMode, setUnitMode] = useState<'count' | 'leadtime'>('count')
+  const [deptMode, setDeptMode] = useState<'count' | 'leadtime'>('count')
 
   const { data: processos = [], isLoading, isError } = useProcessos({
     ...filters,
@@ -211,15 +212,36 @@ export default function OverviewPage() {
         {/* ── Row 5: Departments (paginated) ───────────────────────────────── */}
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <Section title="Departamentos" accentColor="#5e35b1">
+            <Section
+              title={deptMode === 'count' ? 'Departamentos' : 'Tempo Médio por Departamento'}
+              accentColor="#5e35b1"
+              headerRight={
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  value={deptMode}
+                  onChange={(_, v) => v && setDeptMode(v as 'count' | 'leadtime')}
+                  sx={{
+                    '& .MuiToggleButton-root': {
+                      py: 0.25, px: 1, fontSize: '0.68rem', textTransform: 'none',
+                      lineHeight: 1.4, fontWeight: 500,
+                    },
+                  }}
+                >
+                  <ToggleButton value="count">Processos</ToggleButton>
+                  <ToggleButton value="leadtime">Lead Time</ToggleButton>
+                </ToggleButtonGroup>
+              }
+            >
               {isLoading
                 ? <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} />
                 : <DistributionChart
                     title=""
-                    data={metrics.topDepartamentos}
+                    data={deptMode === 'count' ? metrics.topDepartamentos : metrics.leadTimeByDepartamento}
                     height={220}
                     pageSize={5}
                     horizontal={true}
+                    valueLabel={deptMode === 'count' ? 'Processos' : 'Média (dias)'}
                   />
               }
             </Section>

@@ -148,6 +148,28 @@ export function useOverviewData(processos: ProcessoContrato[]) {
       (p) => p.solicitacao_departamento,
     )
 
+    // Lead time by department (avg + median total days)
+    const ltByDept: Record<string, number[]> = {}
+    for (const p of processos) {
+      if (p.solicitacao_cancelada) continue
+      const dept = p.solicitacao_departamento ?? 'N/A'
+      const days = totalLeadTimeDays(p)
+      if (days === null || days < 0) continue
+      if (!ltByDept[dept]) ltByDept[dept] = []
+      ltByDept[dept].push(days)
+    }
+    const leadTimeByDepartamento: DistributionItem[] = Object.entries(ltByDept)
+      .map(([label, days]) => {
+        days.sort((a, b) => a - b)
+        const avg = days.reduce((s, v) => s + v, 0) / days.length
+        return {
+          label,
+          value: Math.round(avg * 10) / 10,
+          median: Math.round(medianOf(days) * 10) / 10,
+        }
+      })
+      .sort((a, b) => b.value - a.value)
+
     // Status distributions for donuts
     const analiseContratoItems: DistributionItem[] = Object.entries(analiseContratoStatus)
       .map(([label, value]) => ({ label, value }))
@@ -175,6 +197,7 @@ export function useOverviewData(processos: ProcessoContrato[]) {
       leadTimeByUnidade,
       porPrioridade,
       topDepartamentos,
+      leadTimeByDepartamento,
       analiseContratoItems,
       aprovacaoItems,
     }
