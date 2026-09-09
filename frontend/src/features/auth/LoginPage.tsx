@@ -10,6 +10,7 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
+  Divider,
   useTheme,
   alpha,
 } from '@mui/material'
@@ -18,43 +19,10 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import { signIn } from '../../services/authService'
 import { strings } from '../../i18n/strings.pt-BR'
 
-// ── Decorative floating orb ───────────────────────────────────────────────────
-function Orb({
-  size,
-  top,
-  left,
-  color,
-  blur,
-}: {
-  size: number
-  top: string
-  left: string
-  color: string
-  blur: number
-}) {
-  return (
-    <Box
-      aria-hidden
-      sx={{
-        position: 'absolute',
-        width: size,
-        height: size,
-        top,
-        left,
-        borderRadius: '50%',
-        background: color,
-        filter: `blur(${blur}px)`,
-        opacity: 0.55,
-        pointerEvents: 'none',
-      }}
-    />
-  )
-}
-
 export default function LoginPage() {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const primary = theme.palette.primary.main // teal
+  const primary = theme.palette.primary.main
 
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
@@ -77,7 +45,20 @@ export default function LoginPage() {
     }
   }
 
-  const borderColor = alpha('#ffffff', 0.1)
+  const fieldSx = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '12px',
+      bgcolor: isDark ? alpha('#ffffff', 0.04) : alpha('#000', 0.02),
+      '& fieldset': {
+        borderColor: isDark ? alpha('#ffffff', 0.1) : alpha('#000', 0.12),
+      },
+      '&:hover fieldset': { borderColor: alpha(primary, 0.45) },
+      '&.Mui-focused fieldset': {
+        borderColor: primary,
+        boxShadow: `0 0 0 3px ${alpha(primary, 0.13)}`,
+      },
+    },
+  }
 
   return (
     <Box
@@ -93,80 +74,70 @@ export default function LoginPage() {
         sx={{
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
           position: 'relative',
           overflow: 'hidden',
-          // Deep dark background — always dark regardless of theme, for visual impact
-          bgcolor: '#0a0e14',
+          bgcolor: '#060a0f',
           p: 6,
         }}
       >
-        {/* Decorative orbs */}
-        <Orb
-          size={420}
-          top="-100px"
-          left="-80px"
-          color={`radial-gradient(circle, ${alpha(primary, 0.55)}, transparent 70%)`}
-          blur={60}
-        />
-        <Orb
-          size={300}
-          top="55%"
-          left="60%"
-          color={`radial-gradient(circle, ${alpha('#0288d1', 0.4)}, transparent 70%)`}
-          blur={80}
-        />
-        <Orb
-          size={200}
-          top="75%"
-          left="-40px"
-          color={`radial-gradient(circle, ${alpha(primary, 0.3)}, transparent 70%)`}
-          blur={50}
+        {/* Single large ambient glow — subtle, centred */}
+        <Box
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            width: 640,
+            height: 640,
+            top: '46%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${alpha(primary, 0.16)} 0%, transparent 65%)`,
+            pointerEvents: 'none',
+          }}
         />
 
-        {/* Subtle grid overlay */}
+        {/* Premium dot grid */}
         <Box
           aria-hidden
           sx={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: `
-              linear-gradient(${alpha('#ffffff', 0.025)} 1px, transparent 1px),
-              linear-gradient(90deg, ${alpha('#ffffff', 0.025)} 1px, transparent 1px)
-            `,
-            backgroundSize: '48px 48px',
+            backgroundImage: `radial-gradient(circle, ${alpha('#ffffff', 0.055)} 1px, transparent 1px)`,
+            backgroundSize: '28px 28px',
             pointerEvents: 'none',
           }}
         />
 
-        {/* Content */}
+        {/* ── Centred hero ─────────────────────────────────────────────────── */}
         <Box
           sx={{
             position: 'relative',
             zIndex: 1,
+            flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            width: '100%',
           }}
         >
-          {/* SiGCon brand mark */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-            <Box
-              sx={{
-                width: 11,
-                height: 11,
-                borderRadius: '50%',
-                flexShrink: 0,
-                background: `linear-gradient(135deg, ${primary}, ${alpha(primary, 0.6)})`,
-                boxShadow: `0 0 14px ${alpha(primary, 0.85)}, 0 0 30px ${alpha(primary, 0.4)}`,
-              }}
-            />
+          {/* Glow wrapper — drop-shadow applied to parent so gradient text glows */}
+          <Box
+            sx={{
+              filter: `drop-shadow(0 0 24px ${alpha(primary, 0.85)}) drop-shadow(0 0 60px ${alpha(primary, 0.4)})`,
+              mb: 2,
+            }}
+          >
             <Typography
               sx={{
-                fontWeight: 800,
-                fontSize: '1.3rem',
-                letterSpacing: '-0.04em',
+                fontSize: 'clamp(3.5rem, 6vw, 5rem)',
+                fontWeight: 900,
                 lineHeight: 1,
-                background: `linear-gradient(135deg, #ffffff 0%, ${alpha(primary, 0.9)} 100%)`,
+                letterSpacing: '-0.04em',
+                background: `linear-gradient(135deg, #00e5b0 0%, ${primary} 48%, #80cbc4 100%)`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -176,82 +147,86 @@ export default function LoginPage() {
             </Typography>
           </Box>
 
-          {/* Main hero text — centred vertically */}
-          <Box
+          <Typography
             sx={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              py: 6,
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: alpha('#ffffff', 0.28),
             }}
           >
-            <Typography
-              sx={{
-                fontSize: '2.6rem',
-                fontWeight: 800,
-                lineHeight: 1.15,
-                letterSpacing: '-0.03em',
-                color: '#ffffff',
-                mb: 2,
-              }}
-            >
-              Gestão de Contratos{' '}
-              <Box
-                component="span"
-                sx={{
-                  background: `linear-gradient(135deg, ${primary} 0%, #4db6ac 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                inteligente.
-              </Box>
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: '1rem',
-                color: alpha('#ffffff', 0.5),
-                lineHeight: 1.6,
-                maxWidth: 340,
-              }}
-            >
-              {strings.app.subtitle} visibilidade de cada fase do processo contratual.
-            </Typography>
-          </Box>
+            {strings.app.subtitle}
+          </Typography>
+        </Box>
 
-          {/* Institution logos — pinned to bottom */}
+        {/* ── Institution logos — pinned to bottom ─────────────────────────── */}
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            pt: 3,
+            borderTop: `1px solid ${alpha('#ffffff', 0.07)}`,
+          }}
+        >
           <Box
+            component="img"
+            src="/agir_logo_colorida.png"
+            alt="AGIR"
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-              pt: 3,
-              borderTop: `1px solid ${alpha('#ffffff', 0.08)}`,
+              height: 26,
+              objectFit: 'contain',
+              opacity: 0.5,
+              filter: 'brightness(0) invert(1)',
+              transition: 'opacity 0.2s',
+              '&:hover': { opacity: 0.8 },
             }}
-          >
-            {[
-              { src: '/agir_logo.png', alt: 'AGIR', h: 28 },
-              { src: '/logo_daherlab.png', alt: 'DaherLab', h: 32 },
-              { src: '/logo_transformacao_digital.png', alt: 'Transformação Digital', h: 28 },
-            ].map(({ src, alt, h }) => (
-              <Box
-                key={alt}
-                component="img"
-                src={src}
-                alt={alt}
-                sx={{
-                  height: h,
-                  objectFit: 'contain',
-                  filter: 'brightness(0) invert(1)',
-                  opacity: 0.55,
-                  transition: 'opacity 0.2s',
-                  '&:hover': { opacity: 0.85 },
-                }}
-              />
-            ))}
-          </Box>
+          />
+
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ borderColor: alpha('#ffffff', 0.1), my: 0.5 }}
+          />
+
+          <Box
+            component="img"
+            src="/logo_daherlab.png"
+            alt="DaherLab"
+            sx={{
+              height: 30,
+              objectFit: 'contain',
+              opacity: 0.5,
+              filter: 'brightness(0) invert(1)',
+              transition: 'opacity 0.2s',
+              '&:hover': { opacity: 0.8 },
+            }}
+          />
+
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ borderColor: alpha('#ffffff', 0.1), my: 0.5 }}
+          />
+
+          <Box
+            component="img"
+            src="/logo_transformacao_digital.png"
+            alt="Transformação Digital"
+            sx={{
+              height: 26,
+              objectFit: 'contain',
+              opacity: 0.5,
+              filter: 'brightness(0) invert(1)',
+              transition: 'opacity 0.2s',
+              '&:hover': { opacity: 0.8 },
+            }}
+          />
         </Box>
       </Box>
 
@@ -259,7 +234,6 @@ export default function LoginPage() {
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           p: { xs: 3, md: 6 },
@@ -267,48 +241,13 @@ export default function LoginPage() {
         }}
       >
         <Box sx={{ width: '100%', maxWidth: 400 }}>
-          {/* Mobile brand mark */}
-          <Box
-            sx={{
-              display: { xs: 'flex', md: 'none' },
-              alignItems: 'center',
-              gap: 1,
-              mb: 4,
-              justifyContent: 'center',
-            }}
-          >
-            <Box
-              sx={{
-                width: 9,
-                height: 9,
-                borderRadius: '50%',
-                flexShrink: 0,
-                background: `linear-gradient(135deg, ${primary}, ${alpha(primary, 0.6)})`,
-                boxShadow: `0 0 10px ${alpha(primary, 0.8)}`,
-              }}
-            />
-            <Typography
-              sx={{
-                fontWeight: 800,
-                fontSize: '1.1rem',
-                letterSpacing: '-0.03em',
-                background: `linear-gradient(135deg, ${primary} 0%, ${isDark ? '#4db6ac' : theme.palette.primary.dark} 100%)`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              {strings.app.name}
-            </Typography>
-          </Box>
-
           {/* Form card */}
           <Box
             sx={{
               bgcolor: isDark ? alpha('#161b22', 0.9) : '#ffffff',
               border: `1px solid ${isDark ? alpha('#ffffff', 0.08) : alpha('#000', 0.08)}`,
               borderRadius: '20px',
-              p: { xs: 3, sm: 4 },
+              p: { xs: 3, sm: 4.5 },
               boxShadow: isDark
                 ? `0 0 0 1px ${alpha(primary, 0.06)}, 0 24px 64px ${alpha('#000', 0.55)}`
                 : `0 4px 6px ${alpha('#000', 0.04)}, 0 20px 48px ${alpha('#000', 0.08)}`,
@@ -319,17 +258,17 @@ export default function LoginPage() {
             <Box mb={3.5}>
               <Typography
                 sx={{
-                  fontSize: '1.4rem',
+                  fontSize: '1.6rem',
                   fontWeight: 800,
-                  letterSpacing: '-0.02em',
+                  letterSpacing: '-0.025em',
                   color: 'text.primary',
-                  lineHeight: 1.2,
-                  mb: 0.75,
+                  lineHeight: 1.15,
+                  mb: 0.6,
                 }}
               >
                 {strings.auth.login}
               </Typography>
-              <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+              <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary', lineHeight: 1.5 }}>
                 {strings.auth.loginSubtitle}
               </Typography>
             </Box>
@@ -355,18 +294,7 @@ export default function LoginPage() {
                 size="small"
                 autoComplete="email"
                 autoFocus
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '12px',
-                    bgcolor: isDark ? alpha('#ffffff', 0.04) : alpha('#000', 0.02),
-                    '& fieldset': { borderColor: borderColor },
-                    '&:hover fieldset': { borderColor: alpha(primary, 0.4) },
-                    '&.Mui-focused fieldset': {
-                      borderColor: primary,
-                      boxShadow: `0 0 0 3px ${alpha(primary, 0.15)}`,
-                    },
-                  },
-                }}
+                sx={fieldSx}
               />
 
               <TextField
@@ -378,18 +306,7 @@ export default function LoginPage() {
                 fullWidth
                 size="small"
                 autoComplete="current-password"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '12px',
-                    bgcolor: isDark ? alpha('#ffffff', 0.04) : alpha('#000', 0.02),
-                    '& fieldset': { borderColor: borderColor },
-                    '&:hover fieldset': { borderColor: alpha(primary, 0.4) },
-                    '&.Mui-focused fieldset': {
-                      borderColor: primary,
-                      boxShadow: `0 0 0 3px ${alpha(primary, 0.15)}`,
-                    },
-                  },
-                }}
+                sx={fieldSx}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -439,6 +356,11 @@ export default function LoginPage() {
                   fontSize: '0.9rem',
                   textTransform: 'none',
                   letterSpacing: '0.01em',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    boxShadow: `0 4px 20px ${alpha(primary, 0.38)}`,
+                  },
+                  transition: 'box-shadow 0.2s ease',
                 }}
               >
                 {loading ? <CircularProgress size={20} color="inherit" /> : strings.auth.login}
@@ -451,8 +373,9 @@ export default function LoginPage() {
             sx={{
               mt: 3,
               textAlign: 'center',
-              fontSize: '0.72rem',
+              fontSize: '0.7rem',
               color: 'text.disabled',
+              letterSpacing: '0.02em',
             }}
           >
             {strings.app.name} · {strings.app.subtitle}

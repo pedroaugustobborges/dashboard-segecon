@@ -82,7 +82,17 @@ export async function createUser(payload: CreateUserPayload) {
       entidades: payload.entidades,
     },
   })
-  if (error) throw error
+  if (error) {
+    // The edge function returns { error: "..." } JSON with a non-2xx status.
+    // Supabase JS wraps this as a generic FunctionsHttpError — extract the real message.
+    try {
+      const body = await (error as any).context?.json?.()
+      if (body?.error) throw new Error(body.error)
+    } catch (inner) {
+      if (inner instanceof Error && inner.message !== error.message) throw inner
+    }
+    throw error
+  }
   if (data?.error) throw new Error(data.error)
   return data
 }
