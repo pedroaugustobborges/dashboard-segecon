@@ -4,7 +4,7 @@ import {
   Box, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Avatar, Chip,
   IconButton, Tooltip, Drawer, TextField, Select, MenuItem,
-  FormControl, InputLabel, Autocomplete, Alert, Skeleton,
+  FormControl, InputLabel, InputAdornment, Autocomplete, Alert, Skeleton,
   Dialog, DialogTitle, DialogContent, DialogContentText,
   DialogActions, Snackbar, Divider, useTheme, alpha,
 } from '@mui/material'
@@ -15,6 +15,8 @@ import CloseIcon       from '@mui/icons-material/Close'
 import CameraAltIcon   from '@mui/icons-material/CameraAlt'
 import PeopleIcon      from '@mui/icons-material/People'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import VisibilityIcon    from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import {
   listAllUsers, createUser, updateUserProfile,
   resetUserPassword, uploadUserPhoto,
@@ -130,12 +132,13 @@ export default function GestaoUsuario() {
   const { user: currentUser, refreshUser } = useAuthContext()
   const qc = useQueryClient()
 
-  const [drawerOpen,  setDrawerOpen]  = useState(false)
-  const [editTarget,  setEditTarget]  = useState<AppUser | null>(null)
-  const [form,        setForm]        = useState<FormState>(defaultForm)
-  const [resetTarget, setResetTarget] = useState<AppUser | null>(null)
-  const [snack,       setSnack]       = useState<string | null>(null)
-  const [formError,   setFormError]   = useState<string | null>(null)
+  const [drawerOpen,    setDrawerOpen]    = useState(false)
+  const [editTarget,    setEditTarget]    = useState<AppUser | null>(null)
+  const [form,          setForm]          = useState<FormState>(defaultForm)
+  const [resetTarget,   setResetTarget]   = useState<AppUser | null>(null)
+  const [snack,         setSnack]         = useState<string | null>(null)
+  const [formError,     setFormError]     = useState<string | null>(null)
+  const [showPassword,  setShowPassword]  = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ── Queries ───────────────────────────────────────────────────────────────
@@ -213,6 +216,7 @@ export default function GestaoUsuario() {
     setEditTarget(null)
     setForm(defaultForm)
     setFormError(null)
+    setShowPassword(false)
     setDrawerOpen(true)
   }
 
@@ -693,13 +697,29 @@ export default function GestaoUsuario() {
                 />
                 <TextField
                   label={strings.auth.senha}
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={form.senha}
                   onChange={(e) => setForm((f) => ({ ...f, senha: e.target.value }))}
                   required
                   fullWidth
                   size="small"
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((s) => !s)}
+                          edge="end"
+                          size="small"
+                          sx={{ color: 'text.disabled' }}
+                        >
+                          {showPassword
+                            ? <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                            : <VisibilityIcon   sx={{ fontSize: 18 }} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </>
             )}
