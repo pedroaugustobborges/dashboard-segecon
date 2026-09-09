@@ -312,72 +312,11 @@ export default function OverviewPage() {
             </Grid>
           </Grid>
 
-          {/* ── Row 3: Lead time + Treemap (fase × entidade) ─────────────────── */}
+          {/* ── Row 3: Lead time + Processos por Unidade ────────────────────── */}
           <Grid container spacing={2} mb={2}>
             <Grid item xs={12} md={7}>
               <Section>
                 <LeadTimeChart data={leadTimeData} loading={isLoading} height={310} />
-              </Section>
-            </Grid>
-            <Grid item xs={12} md={5}>
-              <Section
-                title="Analistas × Fase Atual"
-                accentColor="#00897b"
-                titleTooltip="O total aqui pode ser menor do que no pictograma porque processos cancelados e processos ainda sem fase iniciada são excluídos. Ou seja, apenas processos ativos e concluídos têm uma fase atual para exibir."
-              >
-                <HeatmapChart
-                  data={heatmapData}
-                  loading={isLoading || reservaLoading}
-                  height={310}
-                />
-              </Section>
-            </Grid>
-          </Grid>
-
-          {/* ── Row 3b: Pictogram — analysts by process volume ───────────────── */}
-          <Grid container spacing={2} mb={2}>
-            <Grid item xs={12} md={7}>
-              <Section
-                title={
-                  analystaMode === 'count'
-                    ? 'Analistas: Volume de Processos (Reserva)'
-                    : 'Analistas: Tempo Médio (Reserva)'
-                }
-                accentColor="#0288d1"
-                headerRight={
-                  <ToggleButtonGroup
-                    size="small"
-                    exclusive
-                    value={analystaMode}
-                    onChange={(_, v) => v && setAnalystaMode(v as 'count' | 'leadtime')}
-                    sx={{
-                      '& .MuiToggleButton-root': {
-                        py: 0.25,
-                        px: 1,
-                        fontSize: '0.68rem',
-                        textTransform: 'none',
-                        lineHeight: 1.4,
-                        fontWeight: 500,
-                      },
-                    }}
-                  >
-                    <ToggleButton value="count">Processos</ToggleButton>
-                    <ToggleButton value="leadtime">Lead Time</ToggleButton>
-                  </ToggleButtonGroup>
-                }
-              >
-                <PictogramChart
-                  data={analystaMode === 'count' ? pictogramData : leadTimeByAnalista}
-                  loading={isLoading || reservaLoading}
-                  accentColor="#0288d1"
-                  pageSize={5}
-                  maxIcons={12}
-                  onEntryClick={(label) => setAnalystaDrawer(label)}
-                  IconComponent={
-                    analystaMode === 'count' ? MedicalInformationIcon : WorkHistoryIcon
-                  }
-                  valueLabel={analystaMode === 'count' ? 'processo' : 'dia'}
-                />
               </Section>
             </Grid>
             <Grid item xs={12} md={5}>
@@ -422,6 +361,61 @@ export default function OverviewPage() {
                     onBarClick={(label) => setUnitDrawer(label)}
                   />
                 )}
+              </Section>
+            </Grid>
+          </Grid>
+
+          {/* ── Row 3b: Pictogram + Heatmap ──────────────────────────────────── */}
+          <Grid container spacing={2} mb={2}>
+            <Grid item xs={12} md={7}>
+              <Section
+                title={
+                  analystaMode === 'count'
+                    ? 'Analistas: Volume de Processos (Reserva)'
+                    : 'Analistas: Tempo Médio (Reserva)'
+                }
+                accentColor="#0288d1"
+                headerRight={
+                  <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={analystaMode}
+                    onChange={(_, v) => v && setAnalystaMode(v as 'count' | 'leadtime')}
+                    sx={{
+                      '& .MuiToggleButton-root': {
+                        py: 0.25, px: 1, fontSize: '0.68rem',
+                        textTransform: 'none', lineHeight: 1.4, fontWeight: 500,
+                      },
+                    }}
+                  >
+                    <ToggleButton value="count">Processos</ToggleButton>
+                    <ToggleButton value="leadtime">Lead Time</ToggleButton>
+                  </ToggleButtonGroup>
+                }
+              >
+                <PictogramChart
+                  data={analystaMode === 'count' ? pictogramData : leadTimeByAnalista}
+                  loading={isLoading || reservaLoading}
+                  accentColor="#0288d1"
+                  pageSize={5}
+                  maxIcons={12}
+                  onEntryClick={(label) => setAnalystaDrawer(label)}
+                  IconComponent={analystaMode === 'count' ? MedicalInformationIcon : WorkHistoryIcon}
+                  valueLabel={analystaMode === 'count' ? 'processo' : 'dia'}
+                />
+              </Section>
+            </Grid>
+            <Grid item xs={12} md={5}>
+              <Section
+                title="Analistas × Fase Atual"
+                accentColor="#00897b"
+                titleTooltip="O total aqui pode ser menor do que no pictograma porque processos cancelados e processos ainda sem fase iniciada são excluídos. Ou seja, apenas processos ativos e concluídos têm uma fase atual para exibir."
+              >
+                <HeatmapChart
+                  data={heatmapData}
+                  loading={isLoading || reservaLoading}
+                  height={310}
+                />
               </Section>
             </Grid>
           </Grid>
