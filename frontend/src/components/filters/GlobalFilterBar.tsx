@@ -14,7 +14,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs }       from '@mui/x-date-pickers/AdapterDayjs'
 import dayjs, { type Dayjs }  from 'dayjs'
 import 'dayjs/locale/pt-br'
-import { TOPBAR_HEIGHT }         from '../layout/AppShell'
 import { useGlobalFilters }      from '../../hooks/useGlobalFilters'
 import { useDistinctEntidades }  from '../../hooks/useProcessoContrato'
 import { useUserRole }           from '../../hooks/useUserRole'
@@ -76,15 +75,19 @@ export function GlobalFilterBar() {
       <Box
         sx={{
           position: 'sticky',
-          top: TOPBAR_HEIGHT,
+          top: 0,
           zIndex: theme.zIndex.appBar - 1,
           borderBottom: `1px solid ${isDark ? alpha('#ffffff', 0.07) : alpha('#000000', 0.07)}`,
-          px: 2.5,
-          py: 1.25,
+          px: 1.5,
+          py: 0.75,
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5,
-          flexWrap: 'wrap',
+          gap: 1,
+          // Single row — scrolls horizontally on very small screens instead of wrapping
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
           // Frosted glass
           bgcolor: isDark ? alpha('#161b22', 0.88) : alpha('#ffffff', 0.88),
           backdropFilter: 'blur(16px)',
@@ -139,7 +142,7 @@ export function GlobalFilterBar() {
               {...params}
               label={strings.filters.unidade}
               sx={{
-                minWidth: 190,
+                minWidth: 160,
                 '& .MuiInputBase-root': inputSx,
               }}
             />
@@ -181,7 +184,7 @@ export function GlobalFilterBar() {
               {...params}
               label={strings.filters.prioridade}
               sx={{
-                minWidth: 155,
+                minWidth: 135,
                 '& .MuiInputBase-root': inputSx,
               }}
             />
@@ -225,7 +228,7 @@ export function GlobalFilterBar() {
                 placeholder: 'De',
                 label: undefined,
                 sx: {
-                  width: 130,
+                  width: 112,
                   '& .MuiInputBase-root': { ...inputSx, bgcolor: 'transparent' },
                   '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
                   '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.divider },
@@ -244,7 +247,7 @@ export function GlobalFilterBar() {
                 placeholder: 'Até',
                 label: undefined,
                 sx: {
-                  width: 130,
+                  width: 112,
                   '& .MuiInputBase-root': { ...inputSx, bgcolor: 'transparent' },
                   '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
                   '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.divider },

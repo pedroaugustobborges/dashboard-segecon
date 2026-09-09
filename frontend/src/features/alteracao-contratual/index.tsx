@@ -4,7 +4,7 @@ import { strings } from '../../i18n/strings.pt-BR'
 
 export default function AlteracaoContratual() {
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <Box sx={{ px: 1.5, py: 1.5 }}>
       <Typography variant="h5" fontWeight={700} mb={3}>
         {strings.nav.alteracaoContratual}
       </Typography>

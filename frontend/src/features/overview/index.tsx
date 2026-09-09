@@ -29,7 +29,7 @@ function Section({
 
   return (
     <Card sx={{ height: '100%' }}>
-      <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         {title && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <Box
@@ -84,40 +84,16 @@ export default function OverviewPage() {
     <Box>
       <GlobalFilterBar />
 
-      <Box sx={{ p: { xs: 2, sm: 3 } }}>
-
-        {/* ── Page header ─────────────────────────────────────────────────── */}
-        <Box sx={{ mb: 3.5 }}>
-          <Typography
-            sx={{
-              fontSize: '1.6rem',
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-              lineHeight: 1.1,
-              // Gradient text
-              background: isDark
-                ? `linear-gradient(135deg, ${theme.palette.text.primary} 30%, ${alpha(theme.palette.text.primary, 0.55)} 100%)`
-                : `linear-gradient(135deg, #111827 0%, #374151 100%)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            {strings.overview.title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5} sx={{ fontSize: '0.8rem' }}>
-            Monitoramento em tempo real dos processos de contratação
-          </Typography>
-        </Box>
+      <Box sx={{ px: 1.5, py: 1.5 }}>
 
         {isError && (
-          <Typography color="error" mb={2} sx={{ fontSize: '0.85rem' }}>
+          <Typography color="error" mb={1.5} sx={{ fontSize: '0.85rem' }}>
             {strings.errors.carregamentoFalhou}
           </Typography>
         )}
 
         {/* ── Row 1: KPI cards ─────────────────────────────────────────────── */}
-        <Grid container spacing={2.5} mb={3}>
+        <Grid container spacing={2} mb={2}>
           {kpiItems.map(({ key, label, value, color, icon }) => (
             <Grid item xs={12} sm={6} md={3} key={key}>
               <KpiCard
@@ -132,7 +108,7 @@ export default function OverviewPage() {
         </Grid>
 
         {/* ── Row 2: Phase funnel + Priority donut ─────────────────────────── */}
-        <Grid container spacing={2.5} mb={3}>
+        <Grid container spacing={2} mb={2}>
           <Grid item xs={12} md={8}>
             <Section title={strings.overview.processosPorFase} accentColor="#0288d1">
               {isLoading
@@ -160,7 +136,7 @@ export default function OverviewPage() {
         </Grid>
 
         {/* ── Row 3: Lead time + By unit ───────────────────────────────────── */}
-        <Grid container spacing={2.5} mb={3}>
+        <Grid container spacing={2} mb={2}>
           <Grid item xs={12} md={7}>
             <Section>
               <LeadTimeChart data={leadTimeData} loading={isLoading} height={310} />
@@ -182,7 +158,7 @@ export default function OverviewPage() {
         </Grid>
 
         {/* ── Row 4: Status donuts ─────────────────────────────────────────── */}
-        <Grid container spacing={2.5} mb={3}>
+        <Grid container spacing={2} mb={2}>
           <Grid item xs={12} md={6}>
             <Section accentColor="#00897b">
               <PriorityPieChart
@@ -208,7 +184,7 @@ export default function OverviewPage() {
         </Grid>
 
         {/* ── Row 5: Top departments ───────────────────────────────────────── */}
-        <Grid container spacing={2.5}>
+        <Grid container spacing={2}>
           <Grid item xs={12}>
             <Section title={strings.overview.topDepartamentos} accentColor="#5e35b1">
               {isLoading

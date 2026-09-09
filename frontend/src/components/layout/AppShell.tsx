@@ -397,26 +397,35 @@ export function AppShell() {
 
   // ── Shell layout ───────────────────────────────────────────────────────────
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Fixed sidebar — always flush to left edge */}
+    // Root is a minimal host — just bgcolor. Both sidebar and main column are
+    // position:fixed so they are completely out of document flow and their widths
+    // are controlled by explicit left/right coordinates, not CSS block calculations.
+    <Box sx={{ bgcolor: 'background.default' }}>
+      {/* Fixed sidebar */}
       {sidebar}
 
-      {/* Main area — offset by sidebar width */}
+      {/* Main column — position:fixed with explicit left/right edges.
+          left: SIDEBAR_WIDTH + right: 0 guarantees it fills exactly the
+          remaining viewport width regardless of flexbox or block context. */}
       <Box
         sx={{
-          ml: `${SIDEBAR_WIDTH}px`,
-          flex: 1,
+          position: 'fixed',
+          left: SIDEBAR_WIDTH,
+          right: 0,
+          top: 0,
+          bottom: 0,
           display: 'flex',
           flexDirection: 'column',
-          minHeight: '100vh',
-          minWidth: 0,
+          overflow: 'hidden',
+          zIndex: 1,
         }}
       >
-        {/* Topbar */}
+        {/* Topbar — static inside the fixed column; stays pinned at top naturally */}
         <AppBar
-          position="sticky"
+          position="static"
           elevation={0}
           sx={{
+            flexShrink: 0,
             bgcolor: isDark ? alpha('#161b22', 0.92) : alpha('#ffffff', 0.92),
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
@@ -424,7 +433,6 @@ export function AppShell() {
             boxShadow: isDark
               ? `0 1px 0 ${alpha('#ffffff', 0.05)}, 0 4px 20px ${alpha('#000', 0.35)}`
               : `0 1px 0 ${alpha('#000', 0.05)}, 0 4px 12px ${alpha('#000', 0.04)}`,
-            zIndex: theme.zIndex.appBar,
           }}
         >
           <Toolbar sx={{ height: TOPBAR_HEIGHT, position: 'relative', px: { xs: 2, sm: 3 } }}>
@@ -506,8 +514,13 @@ export function AppShell() {
           </Toolbar>
         </AppBar>
 
-        {/* Page content */}
-        <Box component="main" sx={{ flex: 1, overflow: 'auto', bgcolor: 'background.default' }}>
+        {/* Scrollable page content — flex:1 fills remaining height, overflow-y
+            handles page scrolling. GlobalFilterBar inside pages uses
+            position:sticky top:0 to stick within this scroll container. */}
+        <Box
+          component="main"
+          sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', bgcolor: 'background.default' }}
+        >
           <Outlet />
         </Box>
       </Box>

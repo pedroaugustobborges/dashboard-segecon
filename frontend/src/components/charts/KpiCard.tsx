@@ -71,7 +71,7 @@ export function KpiCard({
         }}
       />
 
-      <CardContent sx={{ position: 'relative', p: 2.5, '&:last-child': { pb: 2.5 } }}>
+      <CardContent sx={{ position: 'relative', p: 2, '&:last-child': { pb: 2 } }}>
         {/* Icon + tooltip */}
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
           {icon ? (

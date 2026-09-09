@@ -95,15 +95,15 @@ export function PhaseView({
   return (
     <Box>
       <GlobalFilterBar />
-      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ px: 1.5, py: 1.5 }}>
         {/* Header */}
-        <Box sx={{ mb: 3, borderLeft: `4px solid ${phaseColor}`, pl: 2 }}>
+        <Box sx={{ mb: 2, borderLeft: `4px solid ${phaseColor}`, pl: 1.5 }}>
           <Typography variant="h5" fontWeight={700}>{title}</Typography>
           {subtitle && <Typography variant="body2" color="text.secondary" mt={0.5}>{subtitle}</Typography>}
         </Box>
 
         {/* KPI row */}
-        <Grid container spacing={2.5} mb={3}>
+        <Grid container spacing={2} mb={3}>
           <Grid item xs={12} sm={6} md={3}>
             <KpiCard
               label={strings.faseIndicators.atualmenteNaFase}
@@ -144,7 +144,7 @@ export function PhaseView({
         </Grid>
 
         {/* Charts row: lead time by prioridade + status donut */}
-        <Grid container spacing={2.5} mb={3}>
+        <Grid container spacing={2} mb={3}>
           <Grid item xs={12} md={statusColumn ? 8 : 12}>
             <Section title={strings.faseIndicators.leadTimePorPrioridade}>
               <DistributionChart
@@ -174,7 +174,7 @@ export function PhaseView({
 
         {/* Responsável chart (Fase 1 Análise only) */}
         {showResponsavelChart && (
-          <Grid container spacing={2.5} mb={3}>
+          <Grid container spacing={2} mb={3}>
             <Grid item xs={12}>
               <Section title={strings.faseIndicators.distribuicaoPorResponsavel}>
                 <DistributionChart
@@ -199,13 +199,13 @@ export function PhaseView({
 
         {/* Gap indicators */}
         {gapIndicators && (
-          <Grid container spacing={2.5} mb={3}>
+          <Grid container spacing={2} mb={3}>
             <Grid item xs={12}>{gapIndicators}</Grid>
           </Grid>
         )}
 
         {/* Prioridade distribution */}
-        <Grid container spacing={2.5} mb={3}>
+        <Grid container spacing={2} mb={3}>
           <Grid item xs={12} md={5}>
             <Section>
               <PriorityPieChart

@@ -49,7 +49,7 @@ export default function ProcessosPage() {
     <Box>
       <GlobalFilterBar />
 
-      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ px: 1.5, py: 1.5 }}>
         <Typography variant="h5" fontWeight={700} mb={2}>
           {strings.processos.title}
         </Typography>
