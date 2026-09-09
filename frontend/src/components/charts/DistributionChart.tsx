@@ -1,9 +1,14 @@
 // Generic distribution chart — horizontal or vertical bar chart.
 // Dark-mode aware: grid lines and tooltip adapt to palette.
-// Used for: processos por unidade, top departamentos, status por fase, etc.
+// Supports optional per-page pagination when pageSize is provided.
 
-import { useMemo } from 'react'
-import { Box, Typography, Skeleton, ToggleButtonGroup, ToggleButton, useTheme, alpha } from '@mui/material'
+import { useMemo, useState, useEffect } from 'react'
+import {
+  Box, Typography, Skeleton, ToggleButtonGroup, ToggleButton,
+  IconButton, useTheme, alpha,
+} from '@mui/material'
+import ChevronLeftIcon  from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, Cell,
@@ -58,6 +63,7 @@ interface DistributionChartProps {
   horizontal?: boolean
   colorMap?: Record<string, string>
   maxItems?: number
+  pageSize?: number
   height?: number
   valueLabel?: string
   segmentKey?: string
@@ -72,19 +78,33 @@ const DEFAULT_COLORS = [
 
 export function DistributionChart({
   title, data, loading, horizontal = true, colorMap, maxItems = 12,
-  height = 300, valueLabel = 'Processos', segmentKey, segments, onSegmentChange,
+  pageSize, height = 300, valueLabel = 'Processos', segmentKey, segments, onSegmentChange,
 }: DistributionChartProps) {
-  const theme  = useTheme()
-  const isDark = theme.palette.mode === 'dark'
+  const theme   = useTheme()
+  const isDark  = theme.palette.mode === 'dark'
+  const primary = theme.palette.primary.main
 
-  const gridColor    = isDark ? alpha('#ffffff', 0.08) : alpha('#000000', 0.07)
-  const tickColor    = isDark ? '#8b949e' : '#6b7280'
-  const tooltipBg    = isDark ? '#1c2128' : '#ffffff'
+  const gridColor     = isDark ? alpha('#ffffff', 0.08) : alpha('#000000', 0.07)
+  const tickColor     = isDark ? '#8b949e' : '#6b7280'
+  const tooltipBg     = isDark ? '#1c2128' : '#ffffff'
   const tooltipBorder = isDark ? alpha('#ffffff', 0.10) : alpha('#000000', 0.10)
-  const tooltipText  = isDark ? '#e6edf3' : '#1a1a2e'
-  const tooltipSub   = isDark ? alpha('#ffffff', 0.55) : alpha('#000000', 0.45)
+  const tooltipText   = isDark ? '#e6edf3' : '#1a1a2e'
+  const tooltipSub    = isDark ? alpha('#ffffff', 0.55) : alpha('#000000', 0.45)
 
-  const sliced = useMemo(() => data.slice(0, maxItems), [data, maxItems])
+  const [page, setPage] = useState(0)
+
+  // Reset to first page whenever the dataset changes
+  useEffect(() => { setPage(0) }, [data])
+
+  const totalPages   = pageSize !== undefined ? Math.ceil(data.length / pageSize) : 1
+  const isPaginated  = pageSize !== undefined && data.length > 0
+
+  const displayData = useMemo(() => {
+    if (pageSize !== undefined) {
+      return data.slice(page * pageSize, (page + 1) * pageSize)
+    }
+    return data.slice(0, maxItems)
+  }, [data, page, pageSize, maxItems])
 
   if (loading) {
     return (
@@ -103,7 +123,7 @@ export function DistributionChart({
     )
   }
 
-  const chartData: ChartEntry[] = sliced.map((item, i) => ({
+  const chartData: ChartEntry[] = displayData.map((item, i) => ({
     name: item.label,
     value: item.value,
     color: colorMap?.[item.label] ?? item.color ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length],
@@ -120,6 +140,10 @@ export function DistributionChart({
       subColor={tooltipSub}
     />
   )
+
+  // Range label e.g. "6 – 10 de 23"
+  const rangeStart = isPaginated ? page * pageSize! + 1 : 1
+  const rangeEnd   = isPaginated ? Math.min((page + 1) * pageSize!, data.length) : data.length
 
   return (
     <Box>
@@ -179,6 +203,101 @@ export function DistributionChart({
           </BarChart>
         )}
       </ResponsiveContainer>
+
+      {/* ── Pagination controls ───────────────────────────────────────────── */}
+      {isPaginated && totalPages > 1 && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mt: 1.5,
+            pt: 1.5,
+            borderTop: `1px solid ${gridColor}`,
+          }}
+        >
+          {/* Range label */}
+          <Typography
+            sx={{
+              fontSize: '0.72rem',
+              color: 'text.disabled',
+              letterSpacing: '0.01em',
+              minWidth: 80,
+            }}
+          >
+            {rangeStart}–{rangeEnd} <Box component="span" sx={{ opacity: 0.6 }}>de</Box> {data.length}
+          </Typography>
+
+          {/* Dot indicators + arrows */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Pill dots */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Box
+                  key={i}
+                  onClick={() => setPage(i)}
+                  sx={{
+                    width: i === page ? 18 : 6,
+                    height: 6,
+                    borderRadius: '999px',
+                    bgcolor: i === page
+                      ? primary
+                      : isDark ? alpha('#ffffff', 0.18) : alpha('#000000', 0.12),
+                    cursor: 'pointer',
+                    transition: 'width 0.22s ease, background-color 0.15s',
+                    '&:hover': {
+                      bgcolor: i === page ? primary : isDark ? alpha('#ffffff', 0.32) : alpha('#000000', 0.24),
+                    },
+                  }}
+                />
+              ))}
+            </Box>
+
+            {/* Chevron buttons */}
+            <IconButton
+              size="small"
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 0}
+              sx={{
+                width: 26, height: 26,
+                border: `1px solid ${isDark ? alpha('#ffffff', 0.1) : alpha('#000000', 0.1)}`,
+                borderRadius: '8px',
+                color: 'text.secondary',
+                transition: 'border-color 0.15s, color 0.15s',
+                '&:hover:not(:disabled)': {
+                  borderColor: alpha(primary, 0.5),
+                  color: primary,
+                  bgcolor: alpha(primary, 0.06),
+                },
+                '&:disabled': { opacity: 0.3 },
+              }}
+            >
+              <ChevronLeftIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+
+            <IconButton
+              size="small"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= totalPages - 1}
+              sx={{
+                width: 26, height: 26,
+                border: `1px solid ${isDark ? alpha('#ffffff', 0.1) : alpha('#000000', 0.1)}`,
+                borderRadius: '8px',
+                color: 'text.secondary',
+                transition: 'border-color 0.15s, color 0.15s',
+                '&:hover:not(:disabled)': {
+                  borderColor: alpha(primary, 0.5),
+                  color: primary,
+                  bgcolor: alpha(primary, 0.06),
+                },
+                '&:disabled': { opacity: 0.3 },
+              }}
+            >
+              <ChevronRightIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Box>
+        </Box>
+      )}
     </Box>
   )
 }

@@ -142,11 +142,11 @@ export function useOverviewData(processos: ProcessoContrato[]) {
       color: prioridadeColors[item.label],
     }))
 
-    // Top departments
+    // All departments (sorted by count desc)
     const topDepartamentos = countBy(
       processos.filter((p) => !p.solicitacao_cancelada),
       (p) => p.solicitacao_departamento,
-    ).slice(0, 10)
+    )
 
     // Status distributions for donuts
     const analiseContratoItems: DistributionItem[] = Object.entries(analiseContratoStatus)

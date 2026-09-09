@@ -208,17 +208,17 @@ export default function OverviewPage() {
           </Grid>
         </Grid>
 
-        {/* ── Row 5: Top departments ───────────────────────────────────────── */}
+        {/* ── Row 5: Departments (paginated) ───────────────────────────────── */}
         <Grid container spacing={2}>
           <Grid item xs={12}>
-            <Section title={strings.overview.topDepartamentos} accentColor="#5e35b1">
+            <Section title="Departamentos" accentColor="#5e35b1">
               {isLoading
                 ? <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} />
                 : <DistributionChart
                     title=""
                     data={metrics.topDepartamentos}
                     height={220}
-                    maxItems={10}
+                    pageSize={5}
                     horizontal={true}
                   />
               }
