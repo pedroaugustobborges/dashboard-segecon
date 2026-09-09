@@ -253,7 +253,7 @@ export function PhaseView({
                   loading={loading}
                   horizontal={true}
                   height={280}
-                  maxItems={15}
+                  pageSize={5}
                 />
               </Section>
             </Grid>
