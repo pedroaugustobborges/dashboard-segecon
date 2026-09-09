@@ -62,7 +62,6 @@ const KPI_CONFIG = [
 
 export default function OverviewPage() {
   const theme  = useTheme()
-  const isDark = theme.palette.mode === 'dark'
   const [filters] = useGlobalFilters()
 
   const { data: processos = [], isLoading, isError } = useProcessos({

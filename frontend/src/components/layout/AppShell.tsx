@@ -10,8 +10,6 @@ import {
 } from '@mui/material'
 import DashboardIcon      from '@mui/icons-material/Dashboard'
 import TableChartIcon     from '@mui/icons-material/TableChart'
-import AssignmentIcon     from '@mui/icons-material/Assignment'
-import GavelIcon          from '@mui/icons-material/Gavel'
 import SwapHorizIcon      from '@mui/icons-material/SwapHoriz'
 import PeopleIcon         from '@mui/icons-material/People'
 import LogoutIcon         from '@mui/icons-material/Logout'
