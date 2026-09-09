@@ -23,7 +23,7 @@ import AnalyticsIcon      from '@mui/icons-material/Analytics'
 import VerifiedIcon       from '@mui/icons-material/Verified'
 import DrawIcon           from '@mui/icons-material/Draw'
 import AttachFileIcon     from '@mui/icons-material/AttachFile'
-import PublishIcon        from '@mui/icons-material/Publish'
+import NewspaperIcon      from '@mui/icons-material/Newspaper'
 import { useAuthContext } from '../../features/auth/AuthContext'
 import { useColorMode }   from '../../theme/ThemeContext'
 import { signOut }        from '../../services/authService'
@@ -58,7 +58,7 @@ const navGroups: Array<{ heading?: string; items: NavItem[]; adminOnly?: boolean
       { label: strings.nav.fase5,                     path: '/fase5',                       icon: <VerifiedIcon fontSize="small" /> },
       { label: strings.nav.fase6,                     path: '/fase6',                       icon: <DrawIcon fontSize="small" /> },
       { label: strings.nav.fase7,                     path: '/fase7',                       icon: <AttachFileIcon fontSize="small" /> },
-      { label: strings.nav.fase8,                     path: '/fase8',                       icon: <PublishIcon fontSize="small" /> },
+      { label: strings.nav.fase8,                     path: '/fase8',                       icon: <NewspaperIcon fontSize="small" /> },
     ],
   },
   {
