@@ -174,7 +174,7 @@ export default function LoginPage() {
             borderTop: `1px solid ${alpha('#ffffff', 0.07)}`,
           }}
         >
-          <Box
+          {/* <Box
             component="img"
             src="/agir_logo_colorida.png"
             alt="AGIR"
@@ -186,7 +186,7 @@ export default function LoginPage() {
               transition: 'opacity 0.2s',
               '&:hover': { opacity: 0.8 },
             }}
-          />
+          /> */}
 
           <Divider
             orientation="vertical"
