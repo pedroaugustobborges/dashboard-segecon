@@ -1,5 +1,8 @@
-import { Card, CardContent, Typography, Box, Skeleton, Tooltip } from '@mui/material'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+// KPI metric card — icon + label + big number + optional delta badge.
+// Accent color controls the icon container tint, background glow, and hover shadow.
+
+import { Card, CardContent, Typography, Box, Skeleton, Tooltip, useTheme, alpha } from '@mui/material'
+import TrendingUpIcon   from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 
@@ -7,26 +10,30 @@ interface KpiCardProps {
   label: string
   value: number | string
   unit?: string
-  delta?: number          // % change, positive = up, negative = down
-  deltaLabel?: string     // e.g. "vs. mês anterior"
-  color?: string          // accent color for the left border
+  delta?: number
+  deltaLabel?: string
+  color?: string
   tooltip?: string
   loading?: boolean
+  icon?: React.ReactNode
   formatValue?: (v: number | string) => string
 }
 
 export function KpiCard({
-  label, value, unit, delta, deltaLabel, color, tooltip, loading, formatValue,
+  label, value, unit, delta, deltaLabel, color, tooltip, loading, icon, formatValue,
 }: KpiCardProps) {
+  const theme  = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const accent = color ?? theme.palette.primary.main
   const displayValue = formatValue ? formatValue(value) : value
 
   if (loading) {
     return (
-      <Card sx={{ borderLeft: '4px solid', borderColor: color ?? 'primary.main', height: '100%' }}>
+      <Card sx={{ height: '100%', minHeight: 140 }}>
         <CardContent>
-          <Skeleton width="60%" height={20} />
-          <Skeleton width="40%" height={48} sx={{ mt: 1 }} />
-          <Skeleton width="50%" height={16} sx={{ mt: 0.5 }} />
+          <Skeleton variant="rounded" width={44} height={44} sx={{ mb: 2, borderRadius: '14px' }} />
+          <Skeleton width="65%" height={14} />
+          <Skeleton width="50%" height={44} sx={{ mt: 0.75 }} />
         </CardContent>
       </Card>
     )
@@ -35,50 +42,134 @@ export function KpiCard({
   return (
     <Card
       sx={{
-        borderLeft: '4px solid',
-        borderColor: color ?? 'primary.main',
         height: '100%',
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        minHeight: 140,
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+        cursor: 'default',
         '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
+          transform: 'translateY(-4px)',
+          boxShadow: isDark
+            ? `0 0 0 1px ${alpha(accent, 0.30)}, 0 8px 32px ${alpha('#000', 0.55)}, 0 0 20px ${alpha(accent, 0.12)}`
+            : `0 8px 28px ${alpha(accent, 0.18)}, 0 1px 0 ${alpha('#000', 0.04)}`,
         },
       }}
     >
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={500} textTransform="uppercase" letterSpacing="0.05em">
-            {label}
-          </Typography>
+      {/* Decorative radial glow — top-right corner */}
+      <Box
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          top: -28,
+          right: -28,
+          width: 120,
+          height: 120,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${alpha(accent, isDark ? 0.20 : 0.13)} 0%, transparent 70%)`,
+          pointerEvents: 'none',
+        }}
+      />
+
+      <CardContent sx={{ position: 'relative', p: 2.5, '&:last-child': { pb: 2.5 } }}>
+        {/* Icon + tooltip */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+          {icon ? (
+            <Box
+              sx={{
+                width: 46,
+                height: 46,
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                bgcolor: alpha(accent, isDark ? 0.18 : 0.10),
+                border: `1px solid ${alpha(accent, isDark ? 0.32 : 0.20)}`,
+                boxShadow: isDark ? `0 0 18px ${alpha(accent, 0.22)}` : 'none',
+                '& svg': { fontSize: 24, color: accent },
+              }}
+            >
+              {icon}
+            </Box>
+          ) : (
+            // Fallback: glowing accent pill (no icon provided)
+            <Box
+              sx={{
+                width: 36, height: 4, borderRadius: 2,
+                bgcolor: accent,
+                boxShadow: isDark ? `0 0 10px ${alpha(accent, 0.7)}` : 'none',
+                mt: 1,
+              }}
+            />
+          )}
+
           {tooltip && (
-            <Tooltip title={tooltip} arrow>
-              <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled', ml: 0.5, mt: 0.25 }} />
+            <Tooltip title={tooltip} arrow placement="top">
+              <InfoOutlinedIcon sx={{ fontSize: 15, color: 'text.disabled', mt: 0.5, cursor: 'help' }} />
             </Tooltip>
           )}
         </Box>
 
-        <Typography variant="h4" fontWeight={700} color="text.primary" lineHeight={1.1}>
-          {displayValue}
+        {/* Label */}
+        <Typography
+          sx={{
+            fontSize: '0.67rem',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'text.secondary',
+            mb: 0.5,
+            lineHeight: 1.3,
+          }}
+        >
+          {label}
+        </Typography>
+
+        {/* Value */}
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, flexWrap: 'wrap' }}>
+          <Typography
+            sx={{
+              fontSize: '2rem',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              lineHeight: 1.05,
+              color: 'text.primary',
+            }}
+          >
+            {displayValue}
+          </Typography>
           {unit && (
-            <Typography component="span" variant="body1" color="text.secondary" ml={0.5}>
+            <Typography sx={{ fontSize: '0.85rem', fontWeight: 500, color: 'text.secondary', lineHeight: 1 }}>
               {unit}
             </Typography>
           )}
-        </Typography>
+        </Box>
 
+        {/* Delta badge */}
         {delta !== undefined && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
-            {delta >= 0
-              ? <TrendingUpIcon sx={{ fontSize: 16, color: 'success.main' }} />
-              : <TrendingDownIcon sx={{ fontSize: 16, color: 'error.main' }} />
-            }
-            <Typography variant="caption" color={delta >= 0 ? 'success.main' : 'error.main'} fontWeight={600}>
-              {delta > 0 ? '+' : ''}{delta}%
-            </Typography>
-            {deltaLabel && (
-              <Typography variant="caption" color="text.disabled">
-                {deltaLabel}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 1 }}>
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.4,
+                px: 0.8,
+                py: 0.3,
+                borderRadius: '7px',
+                bgcolor: alpha(delta >= 0 ? '#4caf50' : '#f44336', isDark ? 0.18 : 0.10),
+                border: `1px solid ${alpha(delta >= 0 ? '#4caf50' : '#f44336', isDark ? 0.32 : 0.20)}`,
+              }}
+            >
+              {delta >= 0
+                ? <TrendingUpIcon sx={{ fontSize: 12, color: 'success.main' }} />
+                : <TrendingDownIcon sx={{ fontSize: 12, color: 'error.main' }} />}
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: delta >= 0 ? 'success.main' : 'error.main', lineHeight: 1 }}>
+                {delta > 0 ? '+' : ''}{delta}%
               </Typography>
+            </Box>
+            {deltaLabel && (
+              <Typography variant="caption" color="text.disabled">{deltaLabel}</Typography>
             )}
           </Box>
         )}
