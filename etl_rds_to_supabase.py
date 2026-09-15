@@ -69,6 +69,10 @@ TABELAS = {
         "destino":      "contrato_catalogo",
         "coluna_data":  "data_inicio",
     },
+    "ressuprimentos.ecompras_extrato_contrato": {
+        "destino":      "extrato_contrato",
+        "coluna_data":  "criado_em",
+    },
 }
 
 

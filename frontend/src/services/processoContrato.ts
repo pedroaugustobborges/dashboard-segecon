@@ -115,6 +115,39 @@ export async function fetchFase1AnaliseReservaByScIds(
   })
 }
 
+/**
+ * Fetches extrato_contrato.contrato_objeto keyed by contrato_numero.
+ * Used by ProcessDrawer to display the "OBJETO" column.
+ *
+ * Join path: processo_contrato.catalogo_precos_numero_contrato
+ *            → extrato_contrato.contrato_numero
+ *            → extrato_contrato.contrato_objeto
+ *
+ * extrato_contrato has one row per catalog item — multiple rows share the same
+ * contrato_numero with an identical contrato_objeto value. We keep only the
+ * first occurrence per contrato_numero.
+ */
+export async function fetchExtratoObjetoByContratoNumero(
+  contratoNumeros: string[],
+): Promise<Map<string, string>> {
+  const BATCH = 500
+  const map = new Map<string, string>()
+  for (let i = 0; i < contratoNumeros.length; i += BATCH) {
+    const batch = contratoNumeros.slice(i, i + BATCH)
+    const { data, error } = await supabase
+      .from('extrato_contrato')
+      .select('contrato_numero, contrato_objeto')
+      .in('contrato_numero', batch)
+    if (error) throw error
+    for (const row of (data as { contrato_numero: string | null; contrato_objeto: string | null }[])) {
+      if (row.contrato_numero && row.contrato_objeto && !map.has(row.contrato_numero)) {
+        map.set(row.contrato_numero, row.contrato_objeto)
+      }
+    }
+  }
+  return map
+}
+
 export async function fetchFase1AnaliseByScIds(
   idControleScList: number[],
 ): Promise<Fase1AnaliseContrato[]> {

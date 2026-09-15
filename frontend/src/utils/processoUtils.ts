@@ -36,6 +36,18 @@ export function totalLeadTimeDays(p: ProcessoContrato): number | null {
   ) / 10
 }
 
+/**
+ * Returns the latest non-null fim date used as the end point for lead time.
+ * Null when no phase has been completed yet (process still fully in progress).
+ */
+export function latestFimDate(p: ProcessoContrato): string | null {
+  for (const field of FIM_FIELDS) {
+    const v = p[field] as string | null
+    if (v) return v
+  }
+  return null
+}
+
 // ── Phase label map ───────────────────────────────────────────────────────────
 
 export const PHASE_LABELS: Record<FaseKey, string> = {

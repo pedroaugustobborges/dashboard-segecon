@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm run:*)",
       "Bash(python build_memorial.py)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(xargs grep:*)",
+      "Bash(wc -l *.csv)",
+      "Bash(python3)"
     ]
   }
 }

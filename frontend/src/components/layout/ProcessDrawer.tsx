@@ -6,14 +6,16 @@
 import { useState, useEffect } from 'react'
 import {
   Box, Typography, Drawer, Table, TableHead, TableBody, TableRow,
-  TableCell, TableContainer, Chip, IconButton, Divider, useTheme, alpha,
+  TableCell, TableContainer, Chip, IconButton, Divider, Tooltip,
+  useTheme, alpha,
 } from '@mui/material'
 import CloseIcon        from '@mui/icons-material/Close'
 import ChevronLeftIcon  from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { derivePhaseInfo } from '../../hooks/useDerivedStatus'
 import { phaseColors, prioridadeColors } from '../../theme/theme'
-import { totalLeadTimeDays, PHASE_LABELS, fmtDate } from '../../utils/processoUtils'
+import { totalLeadTimeDays, latestFimDate, PHASE_LABELS, fmtDate } from '../../utils/processoUtils'
+import { fetchExtratoObjetoByContratoNumero } from '../../services/processoContrato'
 import type { ProcessoContrato, FaseKey } from '../../types/processoContrato.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -83,6 +85,37 @@ function sortProcessos(processes: ProcessoContrato[]): ProcessoContrato[] {
   })
 }
 
+/**
+ * Strip HTML tags and decode all entities from contrato_objeto.
+ * Uses the browser's own DOMParser so every entity — named (&amp;) and
+ * numeric (&#231; &#x00e7;) — is decoded correctly without a lookup table.
+ */
+function stripHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim()
+}
+
+// Truncated text cell with native title tooltip for overflow
+function TruncCell({ text, maxWidth = 160, sx = {} }: { text: string; maxWidth?: number; sx?: object }) {
+  return (
+    <Tooltip title={text} placement="top" enterDelay={600} disableInteractive>
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          maxWidth,
+          color: 'text.secondary',
+          ...sx,
+        }}
+      >
+        {text}
+      </Typography>
+    </Tooltip>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, processes }: ProcessDrawerProps) {
@@ -90,6 +123,21 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
   const isDark  = theme.palette.mode === 'dark'
   const accent  = accentColor ?? theme.palette.primary.main
 
+  // ── Catalog fetch (OBJETO column) ─────────────────────────────────────────
+  const [catalogMap, setCatalogMap] = useState<Map<string, string>>(new Map())
+
+  useEffect(() => {
+    if (!open || processes.length === 0) return
+    const numeros = [...new Set(
+      processes
+        .map((p) => p.catalogo_precos_numero_contrato)
+        .filter((n): n is string => !!n),
+    )]
+    if (numeros.length === 0) return
+    fetchExtratoObjetoByContratoNumero(numeros).then(setCatalogMap).catch(() => {/* silently ignore */})
+  }, [open, processes])
+
+  // ── Summary chips ─────────────────────────────────────────────────────────
   const completed  = processes.filter((p) => derivePhaseInfo(p).status === 'completed')
   const active     = processes.filter((p) => derivePhaseInfo(p).status !== 'completed')
 
@@ -116,7 +164,13 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
     ...(avgDays !== null ? [{ label: 'Média Lead Time', value: `${avgDays} d`, color: accent }] : []),
   ]
 
-  const TABLE_HEADERS = ['Processo', 'Entidade', 'Prioridade', 'Fase Atual', 'Situação', 'Início Fase 1', 'Lead Time', 'Valor (R$)']
+  // Column order: Processo · Entidade · OBJETO · Prioridade · Fase Atual · Situação · Início F1 · Fim Lead Time · Lead Time · Valor
+  const TABLE_HEADERS = [
+    'Processo', 'Entidade', 'Objeto', 'Prioridade',
+    'Fase Atual', 'Situação', 'Início F1', 'Fim Lead Time', 'Lead Time', 'Valor (R$)',
+  ]
+  // last 2 columns are right-aligned
+  const RIGHT_ALIGN_FROM = TABLE_HEADERS.length - 2
 
   return (
     <Drawer
@@ -125,7 +179,7 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
       onClose={onClose}
       PaperProps={{
         sx: {
-          width: { xs: '100%', sm: 900 },
+          width: { xs: '100%', sm: 1100 },
           bgcolor: 'background.default',
           display: 'flex',
           flexDirection: 'column',
@@ -213,8 +267,21 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                   {TABLE_HEADERS.map((h, i) => (
                     <TableCell
                       key={h}
-                      align={i >= TABLE_HEADERS.length - 2 ? 'right' : 'left'}
-                      sx={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}
+                      align={i >= RIGHT_ALIGN_FROM ? 'right' : 'left'}
+                      sx={{
+                        fontSize: '0.68rem', fontWeight: 700,
+                        letterSpacing: '0.05em', textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        // OBJETO column gets a subtle teal tint to signal it's from a joined table
+                        ...(h === 'Objeto' && {
+                          color: accent,
+                          borderBottom: `2px solid ${alpha(accent, 0.35)}`,
+                        }),
+                        // Fim Lead Time gets a matching tint with the Lead Time column
+                        ...(h === 'Fim Lead Time' && {
+                          color: isDark ? alpha('#fff', 0.55) : alpha('#000', 0.45),
+                        }),
+                      }}
                     >
                       {h}
                     </TableCell>
@@ -225,10 +292,15 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                 {paginated.map((p, idx) => {
                   const { currentPhase, status } = derivePhaseInfo(p)
                   const lt = totalLeadTimeDays(p)
+                  const fimLt = latestFimDate(p)
                   const isCompleted = status === 'completed'
                   const prioColor = prioridadeColors[p.solicitacao_tipo ?? ''] ?? alpha(isDark ? '#fff' : '#000', 0.3)
                   const statusReason = deriveStatusReason(p, status, currentPhase)
                   const valor = p.solicitacao_valor_estimado != null ? Number(p.solicitacao_valor_estimado) : null
+                  const objetoRaw = p.catalogo_precos_numero_contrato
+                    ? (catalogMap.get(p.catalogo_precos_numero_contrato) ?? null)
+                    : null
+                  const objeto = objetoRaw ? stripHtml(objetoRaw) : null
 
                   return (
                     <TableRow
@@ -244,8 +316,17 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                       </TableCell>
 
                       {/* Entidade */}
-                      <TableCell sx={{ fontSize: '0.78rem', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <TableCell sx={{ fontSize: '0.78rem', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.entidade ?? '—'}
+                      </TableCell>
+
+                      {/* OBJETO — from contrato_catalogo.nome */}
+                      <TableCell sx={{ maxWidth: 220 }}>
+                        {objeto ? (
+                          <TruncCell text={objeto} maxWidth={210} sx={{ color: 'text.primary', fontWeight: 500 }} />
+                        ) : (
+                          <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>—</Typography>
+                        )}
                       </TableCell>
 
                       {/* Prioridade */}
@@ -265,7 +346,7 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                       </TableCell>
 
                       {/* Fase Atual */}
-                      <TableCell sx={{ maxWidth: 160 }}>
+                      <TableCell sx={{ maxWidth: 155 }}>
                         {isCompleted ? (
                           <Chip
                             label="Concluído"
@@ -297,18 +378,32 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                       </TableCell>
 
                       {/* Situação / Motivo */}
-                      <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <Typography
-                          title={statusReason}
-                          sx={{ fontSize: '0.75rem', color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}
-                        >
-                          {statusReason}
-                        </Typography>
+                      <TableCell sx={{ maxWidth: 190 }}>
+                        <TruncCell text={statusReason} maxWidth={180} />
                       </TableCell>
 
-                      {/* Início Fase 1 */}
+                      {/* Início F1 */}
                       <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
                         {fmtDate(p.fase1_data_inicio_sc)}
+                      </TableCell>
+
+                      {/* Fim Lead Time — the latest data_fim used in the LT calculation */}
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {fimLt ? (
+                          <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
+                            {fmtDate(fimLt)}
+                          </Typography>
+                        ) : (
+                          <Chip
+                            label="Em andamento"
+                            size="small"
+                            sx={{
+                              height: 18, fontSize: '0.62rem', fontWeight: 600,
+                              bgcolor: alpha('#f59e0b', 0.1), color: '#f59e0b',
+                              border: `1px solid ${alpha('#f59e0b', 0.25)}`,
+                            }}
+                          />
+                        )}
                       </TableCell>
 
                       {/* Lead Time */}
@@ -318,15 +413,7 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                             {lt}d
                           </Typography>
                         ) : (
-                          <Chip
-                            label="Em andamento"
-                            size="small"
-                            sx={{
-                              height: 18, fontSize: '0.62rem', fontWeight: 600,
-                              bgcolor: alpha('#f59e0b', 0.12), color: '#f59e0b',
-                              border: `1px solid ${alpha('#f59e0b', 0.3)}`,
-                            }}
-                          />
+                          <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>—</Typography>
                         )}
                       </TableCell>
 
@@ -405,7 +492,7 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
         )}
 
         <Typography sx={{ fontSize: '0.7rem', color: 'text.disabled', textAlign: 'center' }}>
-          Lead Time Total = dias entre Início da Fase 1 e o fim da última fase concluída.
+          Lead Time Total = dias entre Início F1 e Fim Lead Time (última fase concluída). &nbsp;·&nbsp; Objeto = extrato_contrato.contrato_objeto
         </Typography>
       </Box>
     </Drawer>
