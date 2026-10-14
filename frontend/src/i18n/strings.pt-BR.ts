@@ -21,6 +21,8 @@ export const strings = {
     fase8: 'Fase 8: Publicação',
     alteracaoContratual: 'Alteração Contratual',
     gestaoUsuario: 'Gestão de Usuários',
+    gestaoContratos: 'Gestão de Contratos',
+    radar: 'Radar de Contratação',
   },
   filters: {
     unidade: 'Unidade',

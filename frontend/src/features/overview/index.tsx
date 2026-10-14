@@ -17,6 +17,7 @@ import HubIcon from '@mui/icons-material/Hub'
 import BlockIcon from '@mui/icons-material/Block'
 import TaskAltIcon from '@mui/icons-material/TaskAlt'
 import PaidIcon from '@mui/icons-material/Paid'
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
 import MedicalInformationIcon from '@mui/icons-material/MedicalInformation'
 import WorkHistoryIcon from '@mui/icons-material/WorkHistory'
 import { GlobalFilterBar } from '../../components/filters/GlobalFilterBar'
@@ -31,6 +32,7 @@ import { useProcessos } from '../../hooks/useProcessoContrato'
 import { useLeadTime } from '../../hooks/useLeadTime'
 import { useGlobalFilters } from '../../hooks/useGlobalFilters'
 import { useFase1AnaliseReserva } from '../../hooks/useFase1AnaliseReserva'
+import { useContratoCatalogo } from '../../hooks/useContratoCatalogo'
 import { useOverviewData } from './useOverviewData'
 import { totalLeadTimeDays, PHASE_LABELS } from '../../utils/processoUtils'
 import { derivePhaseInfo } from '../../hooks/useDerivedStatus'
@@ -38,6 +40,7 @@ import { phaseColors } from '../../theme/theme'
 import type { FaseKey } from '../../types/processoContrato.types'
 import { prioridadeColors } from '../../theme/theme'
 import { strings } from '../../i18n/strings.pt-BR'
+import { VigenciaWidget } from '../../components/charts/VigenciaWidget'
 
 // Section wrapper — title with left accent bar + card
 function Section({
@@ -224,6 +227,18 @@ export default function OverviewPage() {
       .sort((a, b) => b.total - a.total)
   }, [processosByAnalista])
 
+  const { data: catalogoData = [], isLoading: catalogoLoading } = useContratoCatalogo()
+
+  const totalValorConsumido = useMemo(() => {
+    const total = catalogoData.reduce((sum, c) => sum + Number(c.valor_consumido ?? 0), 0)
+    const totalEst = catalogoData.reduce((sum, c) => sum + Number(c.valor_estimado ?? 0), 0)
+    return { total, pct: totalEst > 0 ? Math.round(total / totalEst * 1000) / 10 : null }
+  }, [catalogoData])
+
+  const valorConsumidoFormatted = new Intl.NumberFormat('pt-BR', {
+    style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1,
+  }).format(totalValorConsumido.total)
+
   const metrics = useOverviewData(processos)
   const leadTimeData = useLeadTime(processos.filter((p) => !p.solicitacao_cancelada))
 
@@ -254,6 +269,15 @@ export default function OverviewPage() {
     },
   ]
 
+  const valorConsumidoKpi = {
+    key: 'valorConsumido' as const,
+    label: 'Valor Consumido',
+    value: valorConsumidoFormatted,
+    color: '#0288d1',
+    icon: <AccountBalanceIcon />,
+    subtitle: totalValorConsumido.pct !== null ? `${totalValorConsumido.pct}% do estimado` : undefined,
+  }
+
   return (
     <>
       <Box>
@@ -280,6 +304,24 @@ export default function OverviewPage() {
                 />
               </Grid>
             ))}
+            <Grid item xs={12} sm={6} md={3}>
+              <KpiCard
+                label={valorConsumidoKpi.label}
+                value={valorConsumidoKpi.value}
+                color={valorConsumidoKpi.color}
+                icon={valorConsumidoKpi.icon}
+                loading={catalogoLoading}
+              />
+            </Grid>
+          </Grid>
+
+          {/* ── Row 1b: Vigência widget ──────────────────────────────────────────── */}
+          <Grid container spacing={2} mb={2}>
+            <Grid item xs={12}>
+              <Section title="Vigência de Contratos" accentColor="#d97706">
+                <VigenciaWidget catalogo={catalogoData} loading={catalogoLoading} />
+              </Section>
+            </Grid>
           </Grid>
 
           {/* ── Row 2: Phase funnel + Priority donut ─────────────────────────── */}

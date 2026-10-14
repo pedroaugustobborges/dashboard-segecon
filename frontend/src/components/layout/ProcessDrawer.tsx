@@ -164,9 +164,9 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
     ...(avgDays !== null ? [{ label: 'Média Lead Time', value: `${avgDays} d`, color: accent }] : []),
   ]
 
-  // Column order: Processo · Entidade · OBJETO · Prioridade · Fase Atual · Situação · Início F1 · Fim Lead Time · Lead Time · Valor
+  // Column order: Processo · Entidade · Responsável · OBJETO · Prioridade · Fase Atual · Situação · Início F1 · Fim Lead Time · Lead Time · Valor
   const TABLE_HEADERS = [
-    'Processo', 'Entidade', 'Objeto', 'Prioridade',
+    'Processo', 'Entidade', 'Responsável', 'Objeto', 'Prioridade',
     'Fase Atual', 'Situação', 'Início F1', 'Fim Lead Time', 'Lead Time', 'Valor (R$)',
   ]
   // last 2 columns are right-aligned
@@ -318,6 +318,11 @@ export function ProcessDrawer({ open, onClose, title, subtitle, accentColor, pro
                       {/* Entidade */}
                       <TableCell sx={{ fontSize: '0.78rem', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.entidade ?? '—'}
+                      </TableCell>
+
+                      {/* Responsável */}
+                      <TableCell sx={{ fontSize: '0.78rem', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.solicitacao_comprador_responsavel ?? '—'}
                       </TableCell>
 
                       {/* OBJETO — from contrato_catalogo.nome */}

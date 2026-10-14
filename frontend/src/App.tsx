@@ -17,6 +17,7 @@ import Fase7 from './features/fase7-validacao-anexos/index'
 import Fase8 from './features/fase8-publicacao/index'
 import AlteracaoContratual from './features/alteracao-contratual/index'
 import GestaoUsuario from './features/gestao-usuario/index'
+import GestaoContratos from './features/gestao-contratos/index'
 import ProcessosPage from './features/processos/index'
 
 const queryClient = new QueryClient({
@@ -40,6 +41,7 @@ export default function App() {
                 <Route element={<AppShell />}>
                   <Route index element={<Navigate to="/visao-geral" replace />} />
                   <Route path="/visao-geral" element={<OverviewPage />} />
+                  <Route path="/gestao-contratos" element={<GestaoContratos />} />
                   <Route path="/processos" element={<ProcessosPage />} />
                   <Route path="/fase1-analise-contrato" element={<Fase1AnaliseContrato />} />
                   <Route path="/fase1-aprovacao-solicitacao" element={<Fase1AprovacaoSolicitacao />} />

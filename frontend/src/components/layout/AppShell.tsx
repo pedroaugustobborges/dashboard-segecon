@@ -8,13 +8,14 @@ import {
   ListItemButton, ListItemIcon, ListItemText, Avatar, Chip,
   Divider, IconButton, Tooltip, useTheme, alpha,
 } from '@mui/material'
-import DashboardIcon      from '@mui/icons-material/Dashboard'
 import TableChartIcon     from '@mui/icons-material/TableChart'
 import SwapHorizIcon      from '@mui/icons-material/SwapHoriz'
 import PeopleIcon         from '@mui/icons-material/People'
 import LogoutIcon         from '@mui/icons-material/Logout'
 import LightModeIcon      from '@mui/icons-material/LightMode'
 import DarkModeIcon       from '@mui/icons-material/DarkMode'
+import TrackChangesIcon   from '@mui/icons-material/TrackChanges'
+import ManageSearchIcon   from '@mui/icons-material/ManageSearch'
 import EditNoteIcon       from '@mui/icons-material/EditNote'
 import HowToVoteIcon      from '@mui/icons-material/HowToVote'
 import RequestQuoteIcon   from '@mui/icons-material/RequestQuote'
@@ -43,8 +44,9 @@ interface NavItem {
 const navGroups: Array<{ heading?: string; items: NavItem[]; adminOnly?: boolean }> = [
   {
     items: [
-      { label: strings.nav.overview,  path: '/visao-geral', icon: <DashboardIcon fontSize="small" /> },
-      { label: strings.nav.processos, path: '/processos',   icon: <TableChartIcon fontSize="small" /> },
+      { label: 'Radar de Contratação', path: '/visao-geral',       icon: <TrackChangesIcon fontSize="small" /> },
+      { label: 'Gestão de Contratos',  path: '/gestao-contratos',  icon: <ManageSearchIcon fontSize="small" /> },
+      { label: strings.nav.processos,  path: '/processos',         icon: <TableChartIcon fontSize="small" /> },
     ],
   },
   {

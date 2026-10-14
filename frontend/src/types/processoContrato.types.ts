@@ -93,6 +93,15 @@ export interface ContratoCatalogo {
   empresa_id: number | null
 }
 
+export interface ContratoGestor {
+  id: number
+  id_controle_contrato: number | null
+  entidade: string | null
+  nome: string | null
+  email: string | null
+  empresa_id: number | null
+}
+
 // Derived types (computed, not from DB)
 export type FaseKey = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 export type FaseStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
